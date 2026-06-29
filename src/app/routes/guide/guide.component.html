@@ -1,0 +1,60 @@
+<section class="guide-page">
+  <title-label
+    title="使用指南"
+    description="按实例、站点、上游、配置发布、观测审计的顺序完成 Nginx 管理闭环。"
+  />
+
+  <div class="guide-flow">
+    @for (step of steps; track step.title; let i = $index) {
+      <article class="guide-step">
+        <div class="step-index">{{ i + 1 }}</div>
+        <div class="step-body">
+          <h2>{{ step.title }}</h2>
+          <p>{{ step.desc }}</p>
+          <div class="field-list">
+            @for (field of step.fields; track field) {
+              <code>{{ field }}</code>
+            }
+          </div>
+          @if (step.path) {
+            <a nz-button nzType="primary" [routerLink]="step.path">{{ step.action }}</a>
+          }
+        </div>
+      </article>
+    }
+  </div>
+
+  <nz-card class="guide-card" [nzBordered]="false">
+    <h2>第一版推荐路径</h2>
+    <div class="connect-grid">
+      <div>
+        <span>1. 实例</span>
+        <code>/nginx/instances</code>
+      </div>
+      <div>
+        <span>2. 建模</span>
+        <code>sites + upstreams</code>
+      </div>
+      <div>
+        <span>3. 发布</span>
+        <code>render → validate → publish</code>
+      </div>
+      <div>
+        <span>4. 观测</span>
+        <code>metrics + logs + audit</code>
+      </div>
+    </div>
+  </nz-card>
+
+  <nz-card class="guide-card" [nzBordered]="false">
+    <h2>注意事项</h2>
+    <ul class="check-list">
+      @for (item of checks; track item) {
+        <li>
+          <i nz-icon nzType="check-circle"></i>
+          <span>{{ item }}</span>
+        </li>
+      }
+    </ul>
+  </nz-card>
+</section>

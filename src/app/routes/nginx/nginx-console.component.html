@@ -1,0 +1,657 @@
+<section class="nginx-page">
+  <header class="page-title-bar">
+    <title-label
+      [title]="currentNav.title"
+      [description]="currentNav.desc"
+    />
+    <div class="page-title-actions">
+      <nz-select
+        class="instance-select"
+        nzPlaceHolder="默认实例"
+        [(ngModel)]="selectedInstance"
+        (ngModelChange)="switchInstance($event)"
+      >
+        <nz-option nzValue="" nzLabel="默认实例"></nz-option>
+        @for (item of instances; track item.guid || item.name) {
+          <nz-option [nzValue]="item.guid || ''" [nzLabel]="item.name"></nz-option>
+        }
+      </nz-select>
+      <button nz-button [nzLoading]="loading" (click)="load()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+    </div>
+  </header>
+
+  <div class="console-shell">
+    <main class="section-body">
+      @switch (section) {
+        @case ('dashboard') {
+          <div class="metric-grid">
+            <div class="metric-tile" [class.is-online]="summary?.status?.running">
+              <span>运行状态</span>
+              <strong>{{ summary?.status?.running ? 'Running' : 'Stopped' }}</strong>
+              <em>{{ summary?.status?.message || '等待后端响应' }}</em>
+            </div>
+            <div class="metric-tile">
+              <span>活跃连接</span>
+              <strong>{{ summary?.stubStatus?.active ?? '-' }}</strong>
+              <em>reading {{ summary?.stubStatus?.reading ?? '-' }} / waiting {{ summary?.stubStatus?.waiting ?? '-' }}</em>
+            </div>
+            <div class="metric-tile">
+              <span>累计请求</span>
+              <strong>{{ summary?.stubStatus?.requests ?? '-' }}</strong>
+              <em>accepted {{ summary?.stubStatus?.accepts ?? '-' }}</em>
+            </div>
+            <div class="metric-tile">
+              <span>进程数量</span>
+              <strong>{{ summary?.status?.processes?.length ?? 0 }}</strong>
+              <em>{{ instanceName(summary?.instanceGuid) }}</em>
+            </div>
+          </div>
+
+          <div class="action-strip">
+            <button nz-button nzType="primary" (click)="runOperation('test')">配置测试</button>
+            <button nz-button (click)="runOperation('reload')">Reload</button>
+            <button nz-button (click)="runOperation('start')">启动</button>
+            <button nz-button nzDanger nz-popconfirm nzPopconfirmTitle="确认重启 Nginx？" (nzOnConfirm)="runOperation('restart', true)">重启</button>
+            <button nz-button nzDanger nz-popconfirm nzPopconfirmTitle="确认停止 Nginx？" (nzOnConfirm)="runOperation('stop', true)">停止</button>
+          </div>
+
+          <div class="content-grid">
+            <nz-card nzTitle="最近操作" [nzBordered]="false">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>动作</th>
+                      <th>结果</th>
+                      <th>耗时</th>
+                      <th>说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of operations; track item.operationGuid) {
+                      <tr>
+                        <td>{{ item.action }}</td>
+                        <td><span class="pill" [class.ok]="item.success">{{ item.success ? '成功' : '失败' }}</span></td>
+                        <td>{{ item.durationMs }}ms</td>
+                        <td>{{ item.message }}</td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="4" class="empty">暂无操作记录</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </nz-card>
+
+            <nz-card nzTitle="进程" [nzBordered]="false">
+              @for (item of summary?.status?.processes || []; track item.pid) {
+                <div class="process-row">
+                  <strong>{{ item.name }} #{{ item.pid }}</strong>
+                  <span>CPU {{ item.cpuPercent | number: '1.0-2' }}% · MEM {{ item.memoryMb | number: '1.0-1' }}MB</span>
+                </div>
+              } @empty {
+                <p class="empty">未检测到 nginx 进程。</p>
+              }
+              <pre class="version">{{ summary?.status?.version || 'nginx -v 输出为空' }}</pre>
+            </nz-card>
+          </div>
+        }
+
+        @case ('nodes') {
+          <div class="editor-grid">
+            <nz-card nzTitle="节点配置" [nzBordered]="false">
+              <form nz-form [formGroup]="nodeForm" class="form-grid">
+                <label>名称<input nz-input formControlName="name" /></label>
+                <label>接入方式
+                  <nz-select formControlName="accessMode">
+                    <nz-option nzValue="agent" nzLabel="Agent"></nz-option>
+                    <nz-option nzValue="local" nzLabel="本机"></nz-option>
+                  </nz-select>
+                </label>
+                <label>Agent ID<input nz-input formControlName="agentId" placeholder="Agent 注册后自动生成或手动指定" /></label>
+                <label>地址<input nz-input formControlName="address" placeholder="10.0.0.12 / hostname" /></label>
+                <label>标签<input nz-input formControlName="labels" placeholder="env=prod,region=cn" /></label>
+                <label>版本<input nz-input formControlName="version" /></label>
+                <label>状态
+                  <nz-select formControlName="status">
+                    <nz-option nzValue="online" nzLabel="online"></nz-option>
+                    <nz-option nzValue="offline" nzLabel="offline"></nz-option>
+                  </nz-select>
+                </label>
+                <label nz-checkbox formControlName="enabled">启用节点</label>
+                <label class="full">描述<textarea nz-input rows="3" formControlName="description"></textarea></label>
+              </form>
+              <button nz-button nzType="primary" (click)="saveNode()">保存节点</button>
+            </nz-card>
+
+            <nz-card nzTitle="Agent 接入说明" [nzBordered]="false">
+              <div class="agent-guide">
+                <strong>推荐部署方式</strong>
+                <p>在每台 Nginx 服务器运行 Agent，Agent 主动注册、心跳、轮询任务，中心端不需要直接 SSH 到业务服务器。</p>
+                <pre class="code-block">go run ./cmd/nginx-agent \
+  -center http://CENTER_HOST:3007/api \
+  -token your-token \
+  -agent-id prod-nginx-01</pre>
+                <p class="muted">Agent 注册成功后，把实例的“运行节点”绑定到该节点，状态、日志、配置发布会自动转发给 Agent。</p>
+              </div>
+            </nz-card>
+          </div>
+
+          <nz-card nzTitle="节点列表" [nzBordered]="false">
+            <div class="stack-list wide">
+              @for (item of nodes; track item.guid || item.agentId || item.name) {
+                <article>
+                  <div>
+                    <strong>{{ item.name }}</strong>
+                    <span>{{ item.accessMode || 'agent' }} · {{ item.address || item.agentId || '-' }} · {{ item.labels || '-' }}</span>
+                    <span>最后心跳：{{ formatTime(item.lastSeenAt) }} · 版本 {{ item.version || '-' }}</span>
+                  </div>
+                  <div class="row-actions">
+                    <span class="pill" [class.ok]="item.status === 'online'">{{ item.status || 'offline' }}</span>
+                    <button nz-button nzSize="small" (click)="editNode(item)">编辑</button>
+                    <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="确认删除该节点？已绑定实例会不可用。" (nzOnConfirm)="deleteNode(item.guid)">删除</button>
+                  </div>
+                </article>
+              } @empty {
+                <p class="empty">暂无节点。Agent 注册后会自动出现在这里，也可以手动创建本机/远程节点。</p>
+              }
+            </div>
+          </nz-card>
+        }
+
+        @case ('instances') {
+          <div class="editor-grid">
+            <nz-card nzTitle="实例配置" [nzBordered]="false">
+              <form nz-form [formGroup]="instanceForm" class="form-grid">
+                <label>名称<input nz-input formControlName="name" /></label>
+                <label>运行节点
+                  <nz-select formControlName="nodeGuid" nzAllowClear nzPlaceHolder="本机">
+                    <nz-option nzValue="" nzLabel="本机"></nz-option>
+                    @for (node of nodes; track node.guid || node.agentId || node.name) {
+                      <nz-option [nzValue]="node.guid || ''" [nzLabel]="node.name + ' · ' + (node.status || 'offline')"></nz-option>
+                    }
+                  </nz-select>
+                </label>
+                <label>模式<nz-select formControlName="mode"><nz-option nzValue="command" nzLabel="command"></nz-option><nz-option nzValue="systemd" nzLabel="systemd"></nz-option><nz-option nzValue="docker" nzLabel="docker"></nz-option></nz-select></label>
+                <label>Host<input nz-input formControlName="host" /></label>
+                <label>Service<input nz-input formControlName="serviceName" /></label>
+                <label>nginx bin<input nz-input formControlName="bin" /></label>
+                <label>systemctl<input nz-input formControlName="systemctl" /></label>
+                <label>主配置<input nz-input formControlName="mainConfig" /></label>
+                <label>托管配置<input nz-input formControlName="managedConfig" /></label>
+                <label>Docker 容器<input nz-input formControlName="dockerContainer" /></label>
+                <label>access log<input nz-input formControlName="accessLog" /></label>
+                <label>error log<input nz-input formControlName="errorLog" /></label>
+                <label>stub_status URL<input nz-input formControlName="stubStatusUrl" /></label>
+                <label class="full">描述<textarea nz-input rows="2" formControlName="description"></textarea></label>
+                <label nz-checkbox formControlName="enabled">启用实例</label>
+              </form>
+              <button nz-button nzType="primary" (click)="saveInstance()">保存实例</button>
+            </nz-card>
+
+            <nz-card nzTitle="实例列表" [nzBordered]="false">
+              <div class="stack-list">
+                @for (item of instances; track item.guid || item.name) {
+                  <article>
+                    <div>
+                      <strong>{{ item.name }}</strong>
+                      <span>{{ item.mode }} · {{ item.host || '-' }}</span>
+                      <span>节点：{{ nodeName(item.nodeGuid) }} · {{ nodeStatus(item.nodeGuid) }}</span>
+                    </div>
+                    <div class="row-actions">
+                      <span class="pill" [class.ok]="nodeStatus(item.nodeGuid) === 'online' || nodeStatus(item.nodeGuid) === 'local'">{{ nodeStatus(item.nodeGuid) }}</span>
+                      <button nz-button nzSize="small" (click)="editInstance(item)">编辑</button>
+                      <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="确认删除该实例？" (nzOnConfirm)="deleteInstance(item.guid)">删除</button>
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="empty">还没有实例，保存左侧表单即可创建。</p>
+                }
+              </div>
+            </nz-card>
+          </div>
+        }
+
+        @case ('sites') {
+          <div class="editor-grid">
+            <nz-card nzTitle="站点" [nzBordered]="false">
+              <form nz-form [formGroup]="siteForm" class="form-grid">
+                <label>名称<input nz-input formControlName="name" /></label>
+                <label>域名<input nz-input formControlName="serverName" /></label>
+                <label>监听<input nz-input formControlName="listen" /></label>
+                <label>根目录<input nz-input formControlName="root" /></label>
+                <label>首页<input nz-input formControlName="index" /></label>
+                <label>证书
+                  <nz-select formControlName="certificateGuid" nzAllowClear nzPlaceHolder="选择证书">
+                    @for (cert of certificates; track cert.guid || cert.name) {
+                      <nz-option [nzValue]="cert.guid || ''" [nzLabel]="cert.name + ' · ' + (cert.serverName || '-')"></nz-option>
+                    }
+                  </nz-select>
+                </label>
+                <label nz-checkbox formControlName="enabled">启用</label>
+                <label nz-checkbox formControlName="ssl">HTTPS</label>
+                <label class="full">扩展配置<textarea nz-input rows="4" formControlName="extraConfig"></textarea></label>
+              </form>
+              <button nz-button nzType="primary" (click)="saveSite()">保存站点</button>
+            </nz-card>
+
+            <nz-card nzTitle="Location" [nzBordered]="false">
+              <form nz-form [formGroup]="locationForm" class="form-grid">
+                <label>站点
+                  <nz-select formControlName="siteGuid" nzPlaceHolder="选择站点">
+                    @for (site of sites; track site.guid || site.name) {
+                      <nz-option [nzValue]="site.guid || ''" [nzLabel]="site.name + ' · ' + site.serverName"></nz-option>
+                    }
+                  </nz-select>
+                </label>
+                <label>路径<input nz-input formControlName="path" /></label>
+                <label>proxy_pass<input nz-input formControlName="proxyPass" /></label>
+                <label>root<input nz-input formControlName="root" /></label>
+                <label>排序<nz-input-number formControlName="sort"></nz-input-number></label>
+                <label class="full">扩展配置<textarea nz-input rows="3" formControlName="extraConfig"></textarea></label>
+              </form>
+              <button nz-button (click)="createLocation()">{{ locationForm.controls.guid.value ? '更新 Location' : '添加 Location' }}</button>
+              <div class="sub-table">
+                <strong>当前站点 Location</strong>
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>路径</th><th>代理</th><th>Root</th><th>排序</th><th></th></tr></thead>
+                    <tbody>
+                      @for (loc of selectedSiteLocations; track loc.guid || loc.path) {
+                        <tr>
+                          <td>{{ loc.path }}</td>
+                          <td>{{ loc.proxyPass || '-' }}</td>
+                          <td>{{ loc.root || '-' }}</td>
+                          <td>{{ loc.sort ?? 0 }}</td>
+                          <td class="row-actions">
+                            <button nz-button nzSize="small" (click)="editLocation(loc)">编辑</button>
+                            <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="确认删除该 Location？" (nzOnConfirm)="deleteLocation(loc)">删除</button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="5" class="empty">选择站点后显示 Location。</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </nz-card>
+          </div>
+
+          <div class="stack-list wide">
+            @for (item of sites; track item.guid || item.name) {
+              <article>
+                <div><strong>{{ item.name }}</strong><span>{{ item.serverName }} · listen {{ item.listen || '80' }}</span></div>
+                <div class="row-actions">
+                  <button nz-button nzSize="small" (click)="editSite(item)">编辑</button>
+                  <button nz-button nzSize="small" (click)="toggleSite(item)">{{ item.enabled ? '禁用' : '启用' }}</button>
+                  <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="确认删除该站点？" (nzOnConfirm)="deleteSite(item.guid)">删除</button>
+                </div>
+              </article>
+            } @empty {
+              <p class="empty">暂无站点。</p>
+            }
+          </div>
+        }
+
+        @case ('upstreams') {
+          <div class="editor-grid">
+            <nz-card nzTitle="上游组" [nzBordered]="false">
+              <form nz-form [formGroup]="upstreamForm" class="form-grid">
+                <label>名称<input nz-input formControlName="name" /></label>
+                <label>策略<input nz-input formControlName="method" placeholder="least_conn / ip_hash" /></label>
+                <label class="full">扩展配置<textarea nz-input rows="3" formControlName="extraConfig"></textarea></label>
+              </form>
+              <button nz-button nzType="primary" (click)="saveUpstream()">保存上游</button>
+            </nz-card>
+
+            <nz-card nzTitle="上游节点" [nzBordered]="false">
+              <form nz-form [formGroup]="upstreamServerForm" class="form-grid">
+                <label>上游组
+                  <nz-select formControlName="upstreamGuid" nzPlaceHolder="选择上游组">
+                    @for (upstream of upstreams; track upstream.guid || upstream.name) {
+                      <nz-option [nzValue]="upstream.guid || ''" [nzLabel]="upstream.name"></nz-option>
+                    }
+                  </nz-select>
+                </label>
+                <label>地址<input nz-input formControlName="address" /></label>
+                <label>权重<nz-input-number formControlName="weight"></nz-input-number></label>
+                <label>max_fails<nz-input-number formControlName="maxFails"></nz-input-number></label>
+                <label>fail_timeout<input nz-input formControlName="failTimeout" /></label>
+                <label nz-checkbox formControlName="backup">backup</label>
+                <label nz-checkbox formControlName="down">down</label>
+                <label>排序<nz-input-number formControlName="sort"></nz-input-number></label>
+              </form>
+              <button nz-button (click)="createUpstreamServer()">{{ upstreamServerForm.controls.guid.value ? '更新节点' : '添加节点' }}</button>
+              <div class="sub-table">
+                <strong>当前上游节点</strong>
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>地址</th><th>权重</th><th>失败策略</th><th>状态</th><th></th></tr></thead>
+                    <tbody>
+                      @for (server of selectedUpstreamServers; track server.guid || server.address) {
+                        <tr>
+                          <td>{{ server.address }}</td>
+                          <td>{{ server.weight || 1 }}</td>
+                          <td>{{ server.maxFails || 0 }} / {{ server.failTimeout || '-' }}</td>
+                          <td>{{ server.down ? 'down' : (server.backup ? 'backup' : 'active') }}</td>
+                          <td class="row-actions">
+                            <button nz-button nzSize="small" (click)="editUpstreamServer(server)">编辑</button>
+                            <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="确认删除该节点？" (nzOnConfirm)="deleteUpstreamServer(server)">删除</button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="5" class="empty">选择上游组后显示节点。</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </nz-card>
+          </div>
+
+          <div class="stack-list wide">
+            @for (item of upstreams; track item.guid || item.name) {
+              <article>
+                <div><strong>{{ item.name }}</strong><span>{{ item.method || 'round-robin' }}</span></div>
+                <div class="row-actions">
+                  <button nz-button nzSize="small" (click)="editUpstream(item)">编辑</button>
+                  <button nz-button nzSize="small" (click)="health(item.guid)">健康检查</button>
+                  <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="确认删除该上游组？" (nzOnConfirm)="deleteUpstream(item.guid)">删除</button>
+                </div>
+              </article>
+            } @empty {
+              <p class="empty">暂无上游。</p>
+            }
+          </div>
+          @if (upstreamHealth) {
+            <pre class="code-block">{{ asText(upstreamHealth) }}</pre>
+          }
+        }
+
+        @case ('certificates') {
+          <div class="editor-grid">
+            <nz-card nzTitle="证书配置" [nzBordered]="false">
+              <form nz-form [formGroup]="certificateForm" class="form-grid">
+                <label>名称<input nz-input formControlName="name" /></label>
+                <label>域名<input nz-input formControlName="serverName" /></label>
+                <label>证书路径<input nz-input formControlName="certPath" /></label>
+                <label>私钥路径<input nz-input formControlName="keyPath" /></label>
+                <label>签发者<input nz-input formControlName="issuer" /></label>
+                <label>生效时间戳<nz-input-number formControlName="notBefore"></nz-input-number></label>
+                <label>过期时间戳<nz-input-number formControlName="notAfter"></nz-input-number></label>
+                <label nz-checkbox formControlName="autoRenew">自动续期</label>
+                <label class="full">备注<textarea nz-input rows="3" formControlName="description"></textarea></label>
+              </form>
+              <button nz-button nzType="primary" (click)="saveCertificate()">保存证书</button>
+            </nz-card>
+
+            <nz-card nzTitle="证书列表" [nzBordered]="false">
+              <div class="stack-list">
+                @for (item of certificates; track item.guid || item.name) {
+                  <article>
+                    <div>
+                      <strong>{{ item.name }}</strong>
+                      <span>{{ item.serverName || '-' }} · {{ item.certPath }}</span>
+                    </div>
+                    <div class="row-actions">
+                      <button nz-button nzSize="small" (click)="editCertificate(item)">编辑</button>
+                      <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="确认删除该证书？" (nzOnConfirm)="deleteCertificate(item.guid)">删除</button>
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="empty">暂无证书。保存左侧表单即可创建。</p>
+                }
+              </div>
+            </nz-card>
+          </div>
+        }
+
+        @case ('configs') {
+          <nz-card nzTitle="配置发布" [nzBordered]="false">
+            <form nz-form [formGroup]="configForm" class="form-grid config-form">
+              <label>实例
+                <nz-select formControlName="instanceGuid" nzAllowClear nzPlaceHolder="默认实例">
+                  <nz-option nzValue="" nzLabel="默认实例"></nz-option>
+                  @for (item of instances; track item.guid || item.name) {
+                    <nz-option [nzValue]="item.guid || ''" [nzLabel]="item.name"></nz-option>
+                  }
+                </nz-select>
+              </label>
+              <label>站点
+                <nz-select formControlName="siteGuid" nzAllowClear nzPlaceHolder="全部启用站点">
+                  <nz-option nzValue="" nzLabel="全部启用站点"></nz-option>
+                  @for (site of sites; track site.guid || site.name) {
+                    <nz-option [nzValue]="site.guid || ''" [nzLabel]="site.name + ' · ' + site.serverName"></nz-option>
+                  }
+                </nz-select>
+              </label>
+              <label>发布版本
+                <nz-select formControlName="versionGuid" nzAllowClear nzPlaceHolder="选择已保存版本">
+                  @for (item of versions; track item['guid']) {
+                    <nz-option [nzValue]="item['guid']" [nzLabel]="'v' + item['versionNo'] + ' · ' + item['status']"></nz-option>
+                  }
+                </nz-select>
+              </label>
+              <label>原因<input nz-input formControlName="reason" /></label>
+              <label nz-checkbox formControlName="save">生成 / 校验时保存版本</label>
+              <label class="full">配置文本<textarea nz-input rows="14" formControlName="config"></textarea></label>
+            </form>
+            <div class="action-strip">
+              <button nz-button (click)="renderConfig()">生成预览</button>
+              <button nz-button (click)="validateConfig()">语法校验</button>
+              <button nz-button (click)="loadVersion(configForm.controls.versionGuid.value, 'publish')">载入版本内容</button>
+              <button nz-button nzType="primary" nz-popconfirm nzPopconfirmTitle="确认发布配置并 reload？" (nzOnConfirm)="publishConfig()">发布并 reload</button>
+            </div>
+            @if (validateResult) {
+              <pre class="code-block">{{ asText(validateResult) }}</pre>
+            }
+            @if (publishResult) {
+              <pre class="code-block">{{ asText(publishResult) }}</pre>
+            }
+          </nz-card>
+
+          <nz-card nzTitle="版本历史" [nzBordered]="false">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>版本</th><th>状态</th><th>原因</th><th>发布时间</th><th></th></tr></thead>
+                <tbody>
+                  @for (item of versions; track item['guid']) {
+                    <tr>
+                      <td>{{ item['versionNo'] }}</td>
+                      <td>{{ item['status'] }}</td>
+                      <td>{{ item['reason'] || '-' }}</td>
+                      <td>{{ formatTime(item['publishedAt']) }}</td>
+                      <td class="row-actions">
+                        <button nz-button nzSize="small" (click)="loadVersion(item['guid'])">查看</button>
+                        <button nz-button nzSize="small" (click)="loadVersion(item['guid'], 'publish')">载入发布</button>
+                        <button nz-button nzSize="small" (click)="loadVersion(item['guid'], 'diffFrom')">作为旧版</button>
+                        <button nz-button nzSize="small" (click)="loadVersion(item['guid'], 'diffTo')">作为新版</button>
+                        <button nz-button nzSize="small" nz-popconfirm nzPopconfirmTitle="确认回滚到该版本？" (nzOnConfirm)="rollback(item['guid'])">回滚</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="empty">暂无版本。</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </nz-card>
+
+          @if (selectedVersion) {
+            <nz-card nzTitle="版本详情" [nzBordered]="false">
+              <div class="version-meta">
+                <span>v{{ selectedVersion.versionNo || '-' }}</span>
+                <span>{{ selectedVersion.status || '-' }}</span>
+                <span>{{ selectedVersion.reason || '-' }}</span>
+                <span>{{ formatTime(selectedVersion.publishedAt) }}</span>
+              </div>
+              <pre class="code-block">{{ selectedVersion.config || '该版本没有配置内容' }}</pre>
+            </nz-card>
+          }
+
+          <div class="content-grid">
+            <nz-card nzTitle="配置 Diff" [nzBordered]="false">
+              <form nz-form [formGroup]="diffForm" class="form-grid">
+                <label>旧版本
+                  <nz-select formControlName="fromVersionGuid" nzAllowClear nzPlaceHolder="选择旧版本">
+                    @for (item of versions; track item['guid']) {
+                      <nz-option [nzValue]="item['guid']" [nzLabel]="'v' + item['versionNo'] + ' · ' + item['status']"></nz-option>
+                    }
+                  </nz-select>
+                </label>
+                <label>新版本
+                  <nz-select formControlName="toVersionGuid" nzAllowClear nzPlaceHolder="选择新版本">
+                    @for (item of versions; track item['guid']) {
+                      <nz-option [nzValue]="item['guid']" [nzLabel]="'v' + item['versionNo'] + ' · ' + item['status']"></nz-option>
+                    }
+                  </nz-select>
+                </label>
+                <label class="full">旧配置<textarea nz-input rows="5" formControlName="fromConfig"></textarea></label>
+                <label class="full">新配置<textarea nz-input rows="5" formControlName="toConfig"></textarea></label>
+              </form>
+              <div class="action-strip">
+                <button nz-button (click)="loadVersion(diffForm.controls.fromVersionGuid.value, 'diffFrom')">载入旧版</button>
+                <button nz-button (click)="loadVersion(diffForm.controls.toVersionGuid.value, 'diffTo')">载入新版</button>
+                <button nz-button (click)="diffConfig()">生成 Diff</button>
+              </div>
+              @if (diffResult) {
+                <pre class="code-block">{{ diffResult.diffText || diffResult.html }}</pre>
+              }
+            </nz-card>
+
+            <nz-card nzTitle="发布任务" [nzBordered]="false">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>动作</th><th>状态</th><th>耗时</th><th>目标</th><th>说明</th></tr></thead>
+                  <tbody>
+                    @for (item of tasks; track item['guid']) {
+                      <tr>
+                        <td>{{ item['action'] }}</td>
+                        <td><span class="pill" [class.ok]="item['success']">{{ item['status'] || (item['success'] ? 'success' : 'failed') }}</span></td>
+                        <td>{{ item['durationMs'] || 0 }}ms</td>
+                        <td>{{ item['targetPath'] || '-' }}</td>
+                        <td>{{ item['message'] || item['reason'] || '-' }}</td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="5" class="empty">暂无发布任务。</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </nz-card>
+          </div>
+        }
+
+        @case ('logs') {
+          <div class="action-strip">
+            <button nz-button (click)="syncLogs()">同步解析最近日志</button>
+          </div>
+          <div class="content-grid">
+            <nz-card nzTitle="Access Log" [nzBordered]="false">
+              <p class="muted">{{ accessLog?.path || '-' }}</p>
+              <pre class="log-box">{{ (accessLog?.lines || []).join('\n') || '暂无 access log' }}</pre>
+            </nz-card>
+            <nz-card nzTitle="Error Log" [nzBordered]="false">
+              <p class="muted">{{ errorLog?.path || '-' }}</p>
+              <pre class="log-box">{{ (errorLog?.lines || []).join('\n') || '暂无 error log' }}</pre>
+            </nz-card>
+          </div>
+          <div class="content-grid">
+            <nz-card nzTitle="结构化 Access" [nzBordered]="false">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>来源</th><th>请求</th><th>状态</th><th>大小</th><th>时间</th></tr></thead>
+                  <tbody>
+                    @for (item of accessRecords; track item['guid']) {
+                      <tr>
+                        <td>{{ item['remoteAddr'] }}</td>
+                        <td>{{ item['method'] }} {{ item['path'] }}</td>
+                        <td><span class="pill" [class.ok]="isHttpOk(item['status'])">{{ item['status'] }}</span></td>
+                        <td>{{ item['bodyBytesSent'] || 0 }}</td>
+                        <td>{{ item['timeLocal'] || '-' }}</td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="5" class="empty">暂无结构化 access 记录，先点击同步解析。</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </nz-card>
+
+            <nz-card nzTitle="结构化 Error" [nzBordered]="false">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>级别</th><th>时间</th><th>信息</th></tr></thead>
+                  <tbody>
+                    @for (item of errorRecords; track item['guid']) {
+                      <tr>
+                        <td><span class="pill">{{ item['level'] || 'error' }}</span></td>
+                        <td>{{ item['timeLocal'] || '-' }}</td>
+                        <td>{{ item['message'] || item['rawLine'] || '-' }}</td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="3" class="empty">暂无结构化 error 记录，先点击同步解析。</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </nz-card>
+          </div>
+          <nz-card nzTitle="审计记录" [nzBordered]="false">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>动作</th><th>资源</th><th>状态</th><th>说明</th><th>原因</th></tr></thead>
+                <tbody>
+                  @for (item of auditRows; track item['guid']) {
+                    <tr>
+                      <td>{{ item['action'] }}</td>
+                      <td>{{ item['resourceType'] }} / {{ item['resourceGuid'] }}</td>
+                      <td>{{ item['status'] }}</td>
+                      <td>{{ item['message'] }}</td>
+                      <td>{{ item['reason'] || '-' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="empty">暂无审计记录。</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </nz-card>
+        }
+
+        @case ('settings') {
+          <div class="editor-grid">
+            <nz-card nzTitle="运行时设置" [nzBordered]="false">
+              <form nz-form [formGroup]="settingForm" class="form-grid">
+                <label>Key<input nz-input formControlName="key" /></label>
+                <label>Value<input nz-input formControlName="value" /></label>
+                <label class="full">描述<textarea nz-input rows="3" formControlName="description"></textarea></label>
+              </form>
+              <button nz-button nzType="primary" (click)="saveSetting()">保存设置</button>
+            </nz-card>
+            <nz-card nzTitle="设置列表" [nzBordered]="false">
+              <div class="stack-list">
+                @for (item of settings; track item.guid || item.key) {
+                  <article>
+                    <div><strong>{{ item.key }}</strong><span>{{ item.description || '-' }}</span></div>
+                    <div class="row-actions">
+                      <code>{{ item.value }}</code>
+                      <button nz-button nzSize="small" (click)="editSetting(item)">编辑</button>
+                      <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="确认删除该设置？" (nzOnConfirm)="deleteSetting(item.guid)">删除</button>
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="empty">暂无运行时设置。</p>
+                }
+              </div>
+            </nz-card>
+          </div>
+        }
+      }
+    </main>
+  </div>
+</section>

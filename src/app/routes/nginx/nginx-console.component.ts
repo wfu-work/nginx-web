@@ -17,8 +17,6 @@ import {
   LogResult,
   MetricSummary,
   NginxApiService,
-  NginxInstance,
-  NginxNode,
   OperationResult,
   PublishResult,
   RuntimeSetting,
@@ -27,7 +25,7 @@ import {
   UpstreamServer,
 } from './nginx-api.service';
 
-type Section = 'dashboard' | 'nodes' | 'instances' | 'sites' | 'upstreams' | 'certificates' | 'configs' | 'logs' | 'settings';
+type Section = 'dashboard' | 'sites' | 'upstreams' | 'certificates' | 'configs' | 'logs' | 'settings';
 type PlainRow = { [key: string]: unknown };
 
 interface ConsoleNav {
@@ -53,11 +51,8 @@ export class NginxConsoleComponent implements OnInit {
 
   protected section: Section = 'dashboard';
   protected loading = false;
-  protected selectedInstance = '';
   protected summary: MetricSummary | null = null;
   protected operations: OperationResult[] = [];
-  protected nodes: NginxNode[] = [];
-  protected instances: NginxInstance[] = [];
   protected sites: Site[] = [];
   protected selectedSiteLocations: LocationRule[] = [];
   protected upstreams: Upstream[] = [];
@@ -80,8 +75,6 @@ export class NginxConsoleComponent implements OnInit {
 
   protected readonly navs: ConsoleNav[] = [
     { key: 'dashboard', title: '运行总览', desc: '状态、指标和高危操作', icon: 'dashboard' },
-    { key: 'nodes', title: '节点', desc: '多服务器 Agent 接入状态', icon: 'branches' },
-    { key: 'instances', title: '实例', desc: '绑定本机或远程节点', icon: 'cloud-server' },
     { key: 'sites', title: '站点', desc: '域名、目录和代理规则', icon: 'partition' },
     { key: 'upstreams', title: '上游', desc: '负载均衡和健康检查', icon: 'cluster' },
     { key: 'certificates', title: '证书', desc: 'HTTPS 证书路径与续期', icon: 'safety-certificate' },
@@ -89,38 +82,6 @@ export class NginxConsoleComponent implements OnInit {
     { key: 'logs', title: '日志', desc: 'access/error/审计', icon: 'audit' },
     { key: 'settings', title: '设置', desc: '运行时 key-value 配置', icon: 'setting' },
   ];
-
-  protected readonly instanceForm = this.fb.nonNullable.group({
-    guid: [''],
-    name: ['默认实例', [Validators.required]],
-    nodeGuid: [''],
-    mode: ['command', [Validators.required]],
-    host: ['127.0.0.1'],
-    serviceName: ['nginx'],
-    bin: ['nginx'],
-    systemctl: ['systemctl'],
-    mainConfig: [''],
-    managedConfig: ['./data/nginx/generated.conf'],
-    dockerContainer: [''],
-    accessLog: ['/var/log/nginx/access.log'],
-    errorLog: ['/var/log/nginx/error.log'],
-    stubStatusUrl: [''],
-    enabled: [true],
-    description: [''],
-  });
-
-  protected readonly nodeForm = this.fb.nonNullable.group({
-    guid: [''],
-    name: ['生产 Nginx 01', [Validators.required]],
-    accessMode: ['agent', [Validators.required]],
-    agentId: [''],
-    address: [''],
-    labels: ['env=prod'],
-    status: ['offline'],
-    version: [''],
-    enabled: [true],
-    description: [''],
-  });
 
   protected readonly siteForm = this.fb.nonNullable.group({
     guid: [''],
@@ -180,7 +141,6 @@ export class NginxConsoleComponent implements OnInit {
   });
 
   protected readonly configForm = this.fb.nonNullable.group({
-    instanceGuid: [''],
     siteGuid: [''],
     reason: ['前端控制台发布'],
     config: [''],
@@ -218,10 +178,7 @@ export class NginxConsoleComponent implements OnInit {
   }
 
   protected load(): void {
-    this.ensureInstanceOptions();
     if (this.section === 'dashboard') this.loadDashboard();
-    if (this.section === 'nodes') this.loadNodes();
-    if (this.section === 'instances') this.loadInstances();
     if (this.section === 'sites') this.loadSites();
     if (this.section === 'upstreams') this.loadUpstreams();
     if (this.section === 'certificates') this.loadCertificates();
@@ -230,17 +187,10 @@ export class NginxConsoleComponent implements OnInit {
     if (this.section === 'settings') this.loadSettings();
   }
 
-  protected switchInstance(guid: string): void {
-    this.selectedInstance = guid;
-    this.configForm.patchValue({ instanceGuid: guid });
-    this.load();
-  }
-
   protected runOperation(action: string, confirm = false): void {
     this.loading = true;
     this.api
       .operation(action, {
-        instanceGuid: this.selectedInstance,
         confirm,
         reason: `frontend:${action}`,
       })
@@ -253,59 +203,6 @@ export class NginxConsoleComponent implements OnInit {
         },
         error: (err) => this.message.error(err?.msg || err?.message || `${action} 执行失败`),
       });
-  }
-
-  protected saveInstance(): void {
-    if (this.rejectInvalid(this.instanceForm)) return;
-    this.api.saveInstance(this.instanceForm.getRawValue()).subscribe({
-      next: () => {
-        this.message.success('实例已保存');
-        this.instanceForm.patchValue({ guid: '' });
-        this.loadInstances();
-      },
-      error: (err) => this.handleError(err, '实例保存失败'),
-    });
-  }
-
-  protected editInstance(item: NginxInstance): void {
-    this.instanceForm.patchValue({ ...item, nodeGuid: item.nodeGuid || '', enabled: item.enabled ?? true });
-  }
-
-  protected deleteInstance(guid?: string): void {
-    if (!guid) return;
-    this.api.deleteInstance(guid).subscribe({ next: () => this.loadInstances() });
-  }
-
-  protected saveNode(): void {
-    if (this.rejectInvalid(this.nodeForm)) return;
-    this.api.saveNode(this.nodeForm.getRawValue()).subscribe({
-      next: () => {
-        this.message.success('节点已保存');
-        this.nodeForm.patchValue({ guid: '' });
-        this.loadNodes();
-      },
-      error: (err) => this.handleError(err, '节点保存失败'),
-    });
-  }
-
-  protected editNode(item: NginxNode): void {
-    this.nodeForm.patchValue({
-      ...item,
-      accessMode: item.accessMode || 'agent',
-      status: item.status || 'offline',
-      enabled: item.enabled ?? true,
-    });
-  }
-
-  protected deleteNode(guid?: string): void {
-    if (!guid) return;
-    this.api.deleteNode(guid).subscribe({
-      next: () => {
-        this.message.success('节点已删除');
-        this.loadNodes();
-      },
-      error: (err) => this.handleError(err, '节点删除失败'),
-    });
   }
 
   protected saveSite(): void {
@@ -560,7 +457,6 @@ export class NginxConsoleComponent implements OnInit {
     if (!versionGuid) return;
     this.api
       .rollback({
-        instanceGuid: this.selectedInstance,
         versionGuid,
         confirm: true,
         reason: '前端控制台回滚',
@@ -574,7 +470,7 @@ export class NginxConsoleComponent implements OnInit {
   }
 
   protected syncLogs(): void {
-    this.api.syncLogs({ instanceGuid: this.selectedInstance, lines: 500 }).subscribe({
+    this.api.syncLogs({ lines: 500 }).subscribe({
       next: (result) => {
         this.message.success(`日志同步完成：access ${result['accessInserted'] || 0}，error ${result['errorInserted'] || 0}`);
         this.loadLogs();
@@ -625,66 +521,16 @@ export class NginxConsoleComponent implements OnInit {
     return Number.isFinite(code) && code < 400;
   }
 
-  protected instanceName(guid?: string): string {
-    return this.instances.find((item) => item.guid === guid)?.name || guid || '默认实例';
-  }
-
-  protected nodeName(guid?: string): string {
-    if (!guid) return '本机';
-    return this.nodes.find((item) => item.guid === guid)?.name || guid;
-  }
-
-  protected nodeStatus(guid?: string): string {
-    if (!guid) return 'local';
-    return this.nodes.find((item) => item.guid === guid)?.status || 'unknown';
-  }
-
   private loadDashboard(): void {
     this.loading = true;
     forkJoin({
-      instances: this.api.instances({ page: 1, size: 50 }).pipe(catchError(() => of(emptyPage<NginxInstance>()))),
-      summary: this.api.summary(this.selectedInstance).pipe(catchError(() => of(null))),
+      summary: this.api.summary().pipe(catchError(() => of(null))),
       operations: this.api.operations({ page: 1, size: 8 }).pipe(catchError(() => of(emptyPage<OperationResult>()))),
     })
       .pipe(finalize(() => this.finishLoading()))
-      .subscribe(({ instances, summary, operations }) => {
-        this.instances = instances.data || [];
+      .subscribe(({ summary, operations }) => {
         this.summary = summary;
         this.operations = operations.data || [];
-      });
-  }
-
-  private ensureInstanceOptions(): void {
-    if (this.instances.length || this.section === 'dashboard' || this.section === 'instances') return;
-    this.api
-      .instances({ page: 1, size: 100 })
-      .pipe(catchError(() => of(emptyPage<NginxInstance>())))
-      .subscribe((result) => {
-        this.instances = result.data || [];
-        this.cdr.markForCheck();
-      });
-  }
-
-  private loadNodes(): void {
-    this.loading = true;
-    this.api
-      .nodes({ page: 1, size: 100 })
-      .pipe(finalize(() => this.finishLoading()))
-      .subscribe((result) => {
-        this.nodes = result.data || [];
-      });
-  }
-
-  private loadInstances(): void {
-    this.loading = true;
-    forkJoin({
-      instances: this.api.instances({ page: 1, size: 100 }).pipe(catchError(() => of(emptyPage<NginxInstance>()))),
-      nodes: this.api.nodes({ page: 1, size: 100 }).pipe(catchError(() => of(emptyPage<NginxNode>()))),
-    })
-      .pipe(finalize(() => this.finishLoading()))
-      .subscribe(({ instances, nodes }) => {
-        this.instances = instances.data || [];
-        this.nodes = nodes.data || [];
       });
   }
 
@@ -759,10 +605,10 @@ export class NginxConsoleComponent implements OnInit {
   private loadLogs(): void {
     this.loading = true;
     forkJoin({
-      access: this.api.logs('access', { instanceGuid: this.selectedInstance, lines: 120 }).pipe(catchError(() => of(null))),
-      error: this.api.logs('error', { instanceGuid: this.selectedInstance, lines: 120 }).pipe(catchError(() => of(null))),
-      accessRecords: this.api.accessRecords({ page: 1, size: 20, instanceGuid: this.selectedInstance }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
-      errorRecords: this.api.errorRecords({ page: 1, size: 20, instanceGuid: this.selectedInstance }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
+      access: this.api.logs('access', { lines: 120 }).pipe(catchError(() => of(null))),
+      error: this.api.logs('error', { lines: 120 }).pipe(catchError(() => of(null))),
+      accessRecords: this.api.accessRecords({ page: 1, size: 20 }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
+      errorRecords: this.api.errorRecords({ page: 1, size: 20 }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
       audit: this.api.audit({ page: 1, size: 20 }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
     })
       .pipe(finalize(() => this.finishLoading()))

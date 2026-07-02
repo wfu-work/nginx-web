@@ -1,0 +1,106 @@
+<section class="certificate-edit">
+  <div class="page-head">
+    <title-label
+      [title]="isEdit() ? '编辑证书' : '新增证书'"
+      description="维护 HTTPS 证书路径、私钥路径、签发信息和有效期。"
+      [showBack]="true"
+    />
+
+    <div class="head-actions">
+      <button nz-button type="button" (click)="cancel()">
+        <span nz-icon nzType="arrow-left"></span>
+        返回
+      </button>
+      <button
+        nz-button
+        nzType="primary"
+        type="button"
+        [nzLoading]="saving()"
+        [disabled]="!canSubmit()"
+        (click)="save()"
+      >
+        <span nz-icon nzType="save"></span>
+        保存
+      </button>
+    </div>
+  </div>
+
+  <form nz-form class="edit-panel" (ngSubmit)="save()">
+    <section class="intro-card">
+      <span class="intro-icon" nz-icon nzType="safety-certificate"></span>
+      <div>
+        <strong>证书接入说明</strong>
+        <p>保存证书时后端会尝试读取证书文件并解析签发者和有效期。文件不可读时仍会保存路径和手动填写的元数据。</p>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>基础信息</h2>
+        <p>维护证书在控制台中的名称、绑定域名和续期标记。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+        <se label="证书名称" [required]="true" error="请填写证书名称">
+          <input nz-input name="name" placeholder="example.com" [(ngModel)]="model.name" />
+        </se>
+
+        <se label="域名">
+          <input nz-input name="serverName" placeholder="example.com *.example.com" [(ngModel)]="model.serverName" />
+        </se>
+
+        <se label="自动续期">
+          <nz-switch name="autoRenew" [(ngModel)]="model.autoRenew" />
+        </se>
+      </se-container>
+    </section>
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>文件路径</h2>
+        <p>填写 Nginx 节点可访问的证书文件和私钥文件路径。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+        <se label="证书路径" [required]="true" error="请填写证书路径">
+          <input nz-input name="certPath" placeholder="/etc/nginx/ssl/example.crt" [(ngModel)]="model.certPath" />
+        </se>
+
+        <se label="私钥路径" [required]="true" error="请填写私钥路径">
+          <input nz-input name="keyPath" placeholder="/etc/nginx/ssl/example.key" [(ngModel)]="model.keyPath" />
+        </se>
+      </se-container>
+    </section>
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>签发与有效期</h2>
+        <p>证书文件可读时会自动刷新这些字段，也可以手动补充用于展示和到期提醒。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+        <se label="签发者">
+          <input nz-input name="issuer" placeholder="Let's Encrypt" [(ngModel)]="model.issuer" />
+        </se>
+
+        <se label="生效时间戳" extra="{{ formatTime(model.notBefore) }}">
+          <nz-input-number name="notBefore" [nzMin]="0" [(ngModel)]="model.notBefore" />
+        </se>
+
+        <se label="过期时间戳" extra="{{ formatTime(model.notAfter) }}">
+          <nz-input-number name="notAfter" [nzMin]="0" [(ngModel)]="model.notAfter" />
+        </se>
+
+        <se label="备注" [col]="1">
+          <textarea
+            nz-input
+            rows="4"
+            name="description"
+            placeholder="证书来源、续期方式或维护说明"
+            [(ngModel)]="model.description"
+          ></textarea>
+        </se>
+      </se-container>
+    </section>
+  </form>
+</section>

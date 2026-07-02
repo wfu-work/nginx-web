@@ -8,42 +8,8 @@ export interface QueryParams {
   size?: number;
   content?: string;
   keyword?: string;
-  instanceGuid?: string;
   lines?: number;
   [key: string]: string | number | boolean | undefined;
-}
-
-export interface NginxInstance {
-  guid?: string;
-  name: string;
-  nodeGuid?: string;
-  mode: 'command' | 'systemd' | 'docker' | string;
-  host?: string;
-  serviceName?: string;
-  bin?: string;
-  systemctl?: string;
-  mainConfig?: string;
-  managedConfig?: string;
-  dockerContainer?: string;
-  accessLog?: string;
-  errorLog?: string;
-  stubStatusUrl?: string;
-  enabled?: boolean;
-  description?: string;
-}
-
-export interface NginxNode {
-  guid?: string;
-  name: string;
-  accessMode: 'local' | 'agent' | string;
-  agentId?: string;
-  address?: string;
-  labels?: string;
-  status?: 'online' | 'offline' | string;
-  version?: string;
-  lastSeenAt?: number;
-  enabled?: boolean;
-  description?: string;
 }
 
 export interface Site {
@@ -121,7 +87,6 @@ export interface RuntimeSetting {
 }
 
 export interface StatusResult {
-  instanceGuid: string;
   mode: string;
   running: boolean;
   message: string;
@@ -148,7 +113,6 @@ export interface StubStatusResult {
 }
 
 export interface MetricSummary {
-  instanceGuid: string;
   status: StatusResult;
   stubStatus?: StubStatusResult;
   checkedAt: number;
@@ -219,12 +183,12 @@ export interface LogResult {
 export class NginxApiService {
   private readonly http = inject(HttpClient);
 
-  status(instanceGuid?: string): Observable<StatusResult> {
-    return this.http.get<StatusResult>('/nginx/status', { params: this.params({ instanceGuid }) });
+  status(): Observable<StatusResult> {
+    return this.http.get<StatusResult>('/nginx/status');
   }
 
-  summary(instanceGuid?: string): Observable<MetricSummary> {
-    return this.http.get<MetricSummary>('/metrics/summary', { params: this.params({ instanceGuid }) });
+  summary(): Observable<MetricSummary> {
+    return this.http.get<MetricSummary>('/metrics/summary');
   }
 
   operation(action: string, payload: Record<string, unknown> = {}): Observable<OperationResult> {
@@ -235,36 +199,6 @@ export class NginxApiService {
     return this.http.get<PageResult<OperationResult>>('/nginx/operations/list', {
       params: this.params(query),
     });
-  }
-
-  instances(query: QueryParams = {}): Observable<PageResult<NginxInstance>> {
-    return this.http.get<PageResult<NginxInstance>>('/nginx/instances/list', {
-      params: this.params(query),
-    });
-  }
-
-  saveInstance(payload: NginxInstance): Observable<boolean> {
-    if (payload.guid) return this.http.put<boolean>(`/nginx/instances/${payload.guid}`, payload);
-    return this.http.post<boolean>('/nginx/instances', payload);
-  }
-
-  deleteInstance(guid: string): Observable<boolean> {
-    return this.http.delete<boolean>(`/nginx/instances/${guid}`);
-  }
-
-  nodes(query: QueryParams = {}): Observable<PageResult<NginxNode>> {
-    return this.http.get<PageResult<NginxNode>>('/nodes/list', {
-      params: this.params(query),
-    });
-  }
-
-  saveNode(payload: NginxNode): Observable<boolean> {
-    if (payload.guid) return this.http.put<boolean>(`/nodes/${payload.guid}`, payload);
-    return this.http.post<boolean>('/nodes', payload);
-  }
-
-  deleteNode(guid: string): Observable<boolean> {
-    return this.http.delete<boolean>(`/nodes/${guid}`);
   }
 
   sites(query: QueryParams = {}): Observable<PageResult<Site>> {

@@ -16,7 +16,8 @@
 }
 
 .guide-step,
-.guide-card {
+.guide-card,
+.install-panel {
   min-width: 0;
   border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
   border-radius: 8px;
@@ -90,6 +91,12 @@
   padding: 20px;
 }
 
+.install-panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
 .section-heading {
   display: flex;
   gap: 12px;
@@ -102,6 +109,151 @@
   font-size: 12px;
   line-height: 1.6;
   color: #667385;
+}
+
+.install-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.install-method {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e1ebe7;
+  border-radius: 8px;
+  background: #f9fcfa;
+}
+
+.install-method-primary {
+  background: linear-gradient(180deg, #f7fcf9 0%, #f2faf5 100%);
+}
+
+.method-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.method-head h3 {
+  margin: 0;
+  color: #1d2b3f;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.method-head p,
+.method-note {
+  margin: 8px 0 0;
+  color: #667385;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+.method-head > code {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid rgb(var(--nm-primary-rgb) / 24%);
+  border-radius: 4px;
+  color: var(--nm-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 800;
+  background: rgb(var(--nm-primary-rgb) / 8%);
+}
+
+.install-method:nth-child(2) .method-head > code {
+  border-color: #ffd666;
+  color: #ad6800;
+  background: #fffbe6;
+}
+
+.command-block {
+  overflow: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid #d8e8df;
+  border-radius: 8px;
+  color: #203045;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #eef7f2;
+}
+
+.command-block code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.command-block-compact {
+  line-height: 1.9;
+}
+
+.file-list,
+.flag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.file-list code,
+.flag-list code,
+.method-note code {
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #203045;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 800;
+  background: #eaf4ef;
+}
+
+.download-list {
+  display: grid;
+  gap: 12px;
+}
+
+.download-list > div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid #dfe9e5;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.download-list i {
+  color: var(--nm-primary);
+}
+
+.download-list strong {
+  color: #203045;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.flag-list span {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  max-width: 100%;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: #39506b;
+  font-size: 12px;
+  font-weight: 700;
+  background: #eef6f1;
 }
 
 .connect-grid {
@@ -210,6 +362,7 @@
 @media (max-width: 1199px) {
   .guide-flow,
   .connect-grid,
+  .install-grid,
   .quick-grid,
   .setting-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -219,12 +372,21 @@
 @media (max-width: 767px) {
   .guide-flow,
   .connect-grid,
+  .install-grid,
   .quick-grid,
   .setting-grid {
     grid-template-columns: 1fr;
   }
 
   .section-heading {
+    flex-direction: column;
+  }
+
+  .install-panel {
+    padding: 18px;
+  }
+
+  .method-head {
     flex-direction: column;
   }
 

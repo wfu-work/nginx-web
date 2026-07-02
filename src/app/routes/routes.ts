@@ -18,6 +18,16 @@ export const routes: Routes = [
         loadChildren: () => import('./nginx/routes').then((m) => m.routes),
         data: { title: 'Nginx 管理' },
       },
+      {
+        path: 'configs',
+        loadChildren: () => import('./configs/routes').then((m) => m.routes),
+        data: { title: '配置发布' },
+      },
+      {
+        path: 'audit',
+        loadChildren: () => import('./audit/routes').then((m) => m.routes),
+        data: { title: '审计记录' },
+      },
     ],
   },
   { path: '', loadChildren: () => import('./passport/routes').then((m) => m.routes) },

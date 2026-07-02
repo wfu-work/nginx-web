@@ -1,0 +1,212 @@
+<section class="site-edit">
+  <div class="page-head">
+    <title-label
+      [title]="isEdit() ? '编辑站点配置' : '新增站点配置'"
+      description="维护 Nginx server 块的域名、监听、目录、HTTPS 和 Location 代理规则。"
+      [showBack]="true"
+    />
+
+    <div class="head-actions">
+      <button nz-button type="button" (click)="cancel()">
+        <span nz-icon nzType="arrow-left"></span>
+        返回
+      </button>
+      <button
+        nz-button
+        nzType="primary"
+        type="button"
+        [nzLoading]="saving()"
+        [disabled]="!canSubmit()"
+        (click)="save()"
+      >
+        <span nz-icon nzType="save"></span>
+        保存
+      </button>
+    </div>
+  </div>
+
+  <form nz-form class="edit-panel" (ngSubmit)="save()">
+    <section class="intro-card">
+      <span class="intro-icon" nz-icon nzType="appstore"></span>
+      <div>
+        <strong>站点配置说明</strong>
+        <p>站点对应 Nginx server 块。启用状态决定是否参与配置生成，Location 用于维护路径代理、静态目录和扩展配置。</p>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>基础信息</h2>
+        <p>配置站点名称、域名、监听端口和是否参与发布。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+        <se label="站点名称" [required]="true" error="请填写站点名称">
+          <input nz-input name="name" placeholder="生产站点" [(ngModel)]="model.name" />
+        </se>
+
+        <se label="域名" [required]="true" error="请填写域名">
+          <input nz-input name="serverName" placeholder="example.com api.example.com" [(ngModel)]="model.serverName" />
+        </se>
+
+        <se label="监听">
+          <input nz-input name="listen" placeholder="80 / 443 ssl" [(ngModel)]="model.listen" />
+        </se>
+
+        <se label="启用站点">
+          <nz-switch name="enabled" [(ngModel)]="model.enabled" />
+        </se>
+      </se-container>
+    </section>
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>目录与日志</h2>
+        <p>配置静态目录、默认首页和访问日志路径。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+        <se label="根目录">
+          <input nz-input name="root" placeholder="/var/www/example" [(ngModel)]="model.root" />
+        </se>
+
+        <se label="首页">
+          <input nz-input name="index" placeholder="index.html index.htm" [(ngModel)]="model.index" />
+        </se>
+
+        <se label="访问日志">
+          <input nz-input name="accessLog" placeholder="/var/log/nginx/example.access.log" [(ngModel)]="model.accessLog" />
+        </se>
+
+        <se label="错误日志">
+          <input nz-input name="errorLog" placeholder="/var/log/nginx/example.error.log" [(ngModel)]="model.errorLog" />
+        </se>
+      </se-container>
+    </section>
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>HTTPS 与扩展</h2>
+        <p>选择证书、开启 HTTPS，并补充需要直接写入 server 块的自定义配置。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+        <se label="证书">
+          <nz-select name="certificateGuid" nzAllowClear nzPlaceHolder="选择证书" [(ngModel)]="model.certificateGuid">
+            @for (cert of certificates(); track cert.guid || cert.name) {
+              <nz-option [nzValue]="cert.guid || ''" [nzLabel]="certificateLabel(cert)" />
+            }
+          </nz-select>
+        </se>
+
+        <se label="HTTPS">
+          <nz-switch name="ssl" [(ngModel)]="model.ssl" />
+        </se>
+
+        <se label="扩展配置" [col]="1">
+          <textarea
+            nz-input
+            rows="5"
+            name="extraConfig"
+            placeholder="client_max_body_size 50m;"
+            [(ngModel)]="model.extraConfig"
+          ></textarea>
+        </se>
+      </se-container>
+    </section>
+
+    <section class="form-section location-section">
+      <div class="section-head">
+        <h2>Location 规则</h2>
+        <p>维护该站点下的路径匹配、proxy_pass、静态目录和排序。</p>
+      </div>
+
+      @if (!isEdit()) {
+        <nz-alert
+          nzType="info"
+          nzMessage="请先保存站点"
+          nzDescription="站点创建接口当前不返回 guid，保存后从站点列表进入编辑页即可维护 Location。"
+          nzShowIcon
+        />
+      } @else {
+        <div class="location-editor">
+          <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+            <se label="路径" [required]="true" error="请填写路径">
+              <input nz-input name="locationPath" placeholder="/api/" [(ngModel)]="locationModel.path" />
+            </se>
+
+            <se label="proxy_pass">
+              <input nz-input name="locationProxyPass" placeholder="http://backend_pool" [(ngModel)]="locationModel.proxyPass" />
+            </se>
+
+            <se label="root">
+              <input nz-input name="locationRoot" placeholder="/var/www/example" [(ngModel)]="locationModel.root" />
+            </se>
+
+            <se label="排序">
+              <nz-input-number name="locationSort" [(ngModel)]="locationModel.sort" />
+            </se>
+
+            <se label="扩展配置" [col]="1">
+              <textarea
+                nz-input
+                rows="4"
+                name="locationExtraConfig"
+                placeholder="proxy_set_header Host $host;"
+                [(ngModel)]="locationModel.extraConfig"
+              ></textarea>
+            </se>
+          </se-container>
+
+          <div class="location-actions">
+            <button nz-button nzType="primary" type="button" [nzLoading]="locationSaving()" [disabled]="!canSaveLocation()" (click)="saveLocation()">
+              <span nz-icon nzType="plus"></span>
+              {{ locationModel.guid ? '更新 Location' : '添加 Location' }}
+            </button>
+            <button nz-button type="button" (click)="resetLocation()">
+              <span nz-icon nzType="reload"></span>
+              清空
+            </button>
+          </div>
+
+          <st
+            class="location-table"
+            [data]="locations()"
+            [columns]="locationColumns"
+            [page]="locationPage"
+            [size]="'middle'"
+          >
+            <ng-template st-row="pathTpl" let-item>
+              <span class="mono">{{ item.path || '/' }}</span>
+            </ng-template>
+
+            <ng-template st-row="targetTpl" let-item>
+              <div class="location-target">
+                <strong>{{ item.proxyPass || item.root || '-' }}</strong>
+                <span>{{ item.extraConfig ? '包含扩展配置' : '标准 Location' }}</span>
+              </div>
+            </ng-template>
+
+            <ng-template st-row="sortTpl" let-item>
+              <nz-tag>{{ item.sort ?? 0 }}</nz-tag>
+            </ng-template>
+
+            <ng-template st-row="locationActionTpl" let-item>
+              <div class="row-actions">
+                <a (click)="editLocation(item)">编辑</a>
+                <a
+                  class="text-error"
+                  nz-popconfirm
+                  nzPopconfirmTitle="确认删除该 Location？"
+                  (nzOnConfirm)="removeLocation(item)"
+                >
+                  删除
+                </a>
+              </div>
+            </ng-template>
+          </st>
+        </div>
+      }
+    </section>
+  </form>
+</section>

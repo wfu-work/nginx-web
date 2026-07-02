@@ -1,0 +1,65 @@
+<section class="config-page">
+  <div class="page-head">
+    <title-label
+      title="配置预览"
+      description="从站点、上游和证书数据生成最终 Nginx 配置文本。"
+    />
+
+    <div class="head-actions">
+      <button nz-button type="button" [nzLoading]="loading()" (click)="refresh()">
+        <span nz-icon nzType="reload"></span>
+        刷新
+      </button>
+      <button nz-button nzType="primary" type="button" routerLink="/configs/publish">
+        <span nz-icon nzType="deployment-unit"></span>
+        去发布
+      </button>
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <form nz-form class="form-panel" (ngSubmit)="render()">
+      <div class="panel-head">
+        <div>
+          <h2>生成范围</h2>
+          <p>选择单个站点或全部启用站点，生成发布前可检查的完整配置。</p>
+        </div>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+        <se label="站点">
+          <nz-select name="siteGuid" nzAllowClear nzPlaceHolder="全部启用站点" [(ngModel)]="model.siteGuid">
+            <nz-option nzValue="" nzLabel="全部启用站点" />
+            @for (site of sites(); track site.guid || site.name) {
+              <nz-option [nzValue]="site.guid || ''" [nzLabel]="site.name + ' / ' + site.serverName" />
+            }
+          </nz-select>
+        </se>
+
+        <se label="保存版本">
+          <label nz-checkbox name="save" [(ngModel)]="model.save">生成时保存版本</label>
+        </se>
+
+        <se label="原因" [col]="1">
+          <input nz-input name="reason" placeholder="本次生成说明" [(ngModel)]="model.reason" />
+        </se>
+      </se-container>
+
+      <div class="action-strip">
+        <button nz-button nzType="primary" [nzLoading]="rendering()">
+          <span nz-icon nzType="file-search"></span>
+          生成预览
+        </button>
+      </div>
+    </form>
+
+    <section class="result-panel">
+      <h2>预览结果</h2>
+      <p>{{ selectedSiteText() }}</p>
+      @if (result()?.versionGuid) {
+        <p>已保存版本：v{{ result()?.versionNo }}</p>
+      }
+      <pre class="code-block">{{ configText() }}</pre>
+    </section>
+  </div>
+</section>

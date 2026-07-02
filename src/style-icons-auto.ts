@@ -78,11 +78,13 @@ import {
   DownloadOutline,
   WarningOutline,
   ProfileOutline,
+  FileSearchOutline,
 } from '@ant-design/icons-angular/icons';
 
 export const ICONS_AUTO = [
   HomeOutline,
   DownloadOutline,
+  FileSearchOutline,
   ProfileOutline,
   WarningOutline,
   AppleOutline,

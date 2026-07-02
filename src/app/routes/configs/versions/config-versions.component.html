@@ -1,0 +1,162 @@
+<section class="config-page">
+  <div class="page-head">
+    <title-label
+      title="版本历史"
+      description="查看配置版本、对比差异，并选择目标 Agent 节点执行回滚。"
+    />
+
+    <div class="head-actions">
+      <button nz-button type="button" [nzLoading]="loading()" (click)="refresh()">
+        <span nz-icon nzType="reload"></span>
+        刷新
+      </button>
+      <button nz-button nzType="primary" type="button" routerLink="/configs/publish">
+        <span nz-icon nzType="deployment-unit"></span>
+        去发布
+      </button>
+    </div>
+  </div>
+
+  <section class="summary-grid">
+    @for (item of summaryCards(); track item.label) {
+      <article class="summary-card" [class]="'summary-card tone-' + item.tone">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <em>{{ item.hint }}</em>
+      </article>
+    }
+  </section>
+
+  <section class="records-panel">
+    <div class="records-head">
+      <div>
+        <h2>版本记录</h2>
+        <p>按状态或原因搜索版本；回滚会把所选版本重新发布到目标节点。</p>
+      </div>
+      <span class="page-size-pill">{{ query.size }} 条/页</span>
+    </div>
+
+    <form nz-form class="filter-bar" (ngSubmit)="search()">
+      <se-container class="filter-fields" [col]="1" [gutter]="0" [nzLayout]="'inline'">
+        <se class="filter-keyword" label="关键词" [hideLabel]="true">
+          <input nz-input name="content" placeholder="状态 / 原因" [(ngModel)]="query.content" />
+        </se>
+
+        <se class="filter-choice" label="回滚节点" [hideLabel]="true">
+          <nz-select name="rollbackNodeGuid" nzPlaceHolder="回滚目标节点" [(ngModel)]="rollbackNodeGuid">
+            @for (node of nodes(); track node.guid || node.agentId) {
+              <nz-option [nzValue]="node.guid || ''" [nzLabel]="nodeLabel(node)" />
+            }
+          </nz-select>
+        </se>
+      </se-container>
+
+      <div class="filter-actions">
+        <button nz-button nzType="primary">
+          <span nz-icon nzType="search"></span>
+          查询
+        </button>
+        <button nz-button type="button" (click)="reset()">
+          <span nz-icon nzType="reload"></span>
+          重置
+        </button>
+      </div>
+    </form>
+
+    <st
+      class="config-table"
+      [data]="rows()"
+      [columns]="columns"
+      [page]="page"
+      [pi]="query.page"
+      [ps]="query.size"
+      [total]="total()"
+      [loading]="loading()"
+      [size]="'middle'"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="versionTpl" let-item>
+        <div class="version-cell">
+          <strong>v{{ item.versionNo || '-' }}</strong>
+          <span class="mono">{{ item.guid || '-' }}</span>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="statusTpl" let-item>
+        <nz-tag [nzColor]="statusColor(item.status)">
+          {{ statusText(item.status) }}
+        </nz-tag>
+      </ng-template>
+
+      <ng-template st-row="validateTpl" let-item>
+        <nz-tag [nzColor]="validateColor(item)">
+          {{ validateText(item) }}
+        </nz-tag>
+      </ng-template>
+
+      <ng-template st-row="reasonTpl" let-item>
+        <div class="meta-cell">
+          <strong>{{ item.reason || '-' }}</strong>
+          <span>{{ item.rollbackFrom ? '回滚自 ' + item.rollbackFrom : '正常版本' }}</span>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="publishedTpl" let-item>
+        <span class="mono">{{ formatTime(item.publishedAt || item.createTime) }}</span>
+      </ng-template>
+
+      <ng-template st-row="actionTpl" let-item>
+        <div class="row-actions">
+          <a (click)="view(item)">查看</a>
+          <a (click)="useForDiff(item, 'from')">旧版</a>
+          <a (click)="useForDiff(item, 'to')">新版</a>
+          <a
+            class="text-error"
+            nz-popconfirm
+            nzPopconfirmTitle="确认回滚到该版本并 reload？"
+            (nzOnConfirm)="rollback(item)"
+          >
+            回滚
+          </a>
+        </div>
+      </ng-template>
+    </st>
+  </section>
+
+  <div class="split-grid">
+    <section class="result-panel">
+      <h2>版本内容</h2>
+      <p>
+        @if (selectedVersion()) {
+          v{{ selectedVersion()?.versionNo || '-' }} / {{ statusText(selectedVersion()?.status) }}
+        } @else {
+          未选择版本
+        }
+      </p>
+      <pre class="code-block">{{ selectedConfigText() }}</pre>
+    </section>
+
+    <section class="result-panel">
+      <h2>版本对比</h2>
+      <p>
+        旧版：{{ diffModel.fromVersionGuid || '-' }} / 新版：{{ diffModel.toVersionGuid || '-' }}
+      </p>
+
+      <div class="action-strip">
+        <button nz-button nzType="primary" type="button" (click)="diff()">
+          <span nz-icon nzType="diff"></span>
+          生成 Diff
+        </button>
+      </div>
+
+      <pre class="code-block">{{ diffText() }}</pre>
+    </section>
+  </div>
+
+  @if (rollbackResult()) {
+    <section class="result-panel">
+      <h2>回滚结果</h2>
+      <pre class="code-block">{{ asText(rollbackResult()) }}</pre>
+    </section>
+  }
+</section>

@@ -1,0 +1,119 @@
+<section class="node-edit">
+  <div class="page-head">
+    <title-label
+      [title]="isEdit() ? '编辑 Agent 节点' : '新增 Agent 节点'"
+      description="维护 Agent 节点的身份、心跳状态、标签和任务转发开关。"
+      [showBack]="true"
+    />
+
+    <div class="head-actions">
+      <button nz-button type="button" (click)="cancel()">
+        <span nz-icon nzType="arrow-left"></span>
+        返回
+      </button>
+      <button
+        nz-button
+        nzType="primary"
+        type="button"
+        [nzLoading]="saving()"
+        [disabled]="!canSubmit()"
+        (click)="save()"
+      >
+        <span nz-icon nzType="save"></span>
+        保存
+      </button>
+    </div>
+  </div>
+
+  <form nz-form class="edit-panel" (ngSubmit)="save()">
+    <section class="intro-card">
+      <span class="intro-icon" nz-icon nzType="cluster"></span>
+      <div>
+        <strong>Agent 节点接入说明</strong>
+        <p>
+          每台 Nginx 服务器运行一个 Agent。Agent 主动注册、上报心跳并轮询任务，中心端根据节点状态转发配置发布、日志同步和运行操作。
+        </p>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>基础信息</h2>
+        <p>维护节点在控制台里的可读名称、Agent 标识和接入方式。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="104" [nzLayout]="'horizontal'">
+        <se label="节点名称" [required]="true" error="请填写节点名称" extra="建议使用业务环境和机器角色组合命名。">
+          <input nz-input name="name" placeholder="生产 Nginx 01" [(ngModel)]="model.name" />
+        </se>
+
+        <se label="接入方式" extra="当前节点模块只维护 Agent 接入。">
+          <nz-select name="accessMode" [(ngModel)]="model.accessMode">
+            <nz-option nzLabel="Agent" nzValue="agent" />
+          </nz-select>
+        </se>
+
+        <se label="Agent ID" extra="Agent 注册后自动生成，也可预先指定便于固定身份。">
+          <input nz-input name="agentId" placeholder="prod-nginx-01" [(ngModel)]="model.agentId" />
+        </se>
+
+        <se label="地址" extra="用于辅助定位节点，可填写内网 IP、主机名或机房标识。">
+          <input nz-input name="address" placeholder="10.0.0.12 / nginx-prod-01" [(ngModel)]="model.address" />
+        </se>
+      </se-container>
+    </section>
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>运行状态</h2>
+        <p>记录 Agent 的在线状态、版本和是否允许参与任务转发。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="104" [nzLayout]="'horizontal'">
+        <se label="状态" extra="通常由 Agent 心跳更新，手动维护用于调试或初始化。">
+          <nz-select name="status" [(ngModel)]="model.status">
+            <nz-option nzLabel="在线" nzValue="online" />
+            <nz-option nzLabel="离线" nzValue="offline" />
+          </nz-select>
+        </se>
+
+        <se label="启用节点" extra="停用后不参与操作转发，但仍保留节点记录。">
+          <nz-switch name="enabled" [(ngModel)]="model.enabled" />
+        </se>
+
+        <se label="版本" extra="Agent 上报的版本号，便于排查兼容性。">
+          <input nz-input name="version" placeholder="v1.0.0" [(ngModel)]="model.version" />
+        </se>
+      </se-container>
+    </section>
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>分组与备注</h2>
+        <p>用标签组织节点，备注用于记录部署位置、责任团队或维护窗口。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="104" [nzLayout]="'horizontal'">
+        <se label="标签" [col]="1" extra="支持英文逗号或换行分隔，保存后会整理为英文逗号分隔。">
+          <textarea
+            nz-input
+            rows="3"
+            name="labels"
+            placeholder="env=prod,region=cn,node=nginx"
+            [(ngModel)]="model.labels"
+          ></textarea>
+        </se>
+
+        <se label="描述" [col]="1" extra="仅用于控制台展示，不参与 Agent 鉴权。">
+          <textarea
+            nz-input
+            rows="3"
+            name="description"
+            placeholder="部署位置、用途或维护说明"
+            [(ngModel)]="model.description"
+          ></textarea>
+        </se>
+      </se-container>
+    </section>
+  </form>
+</section>

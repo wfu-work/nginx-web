@@ -8,6 +8,15 @@ body {
     sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+html.nm-font-sans body {
+  font-family:
+    'HarmonyOS Sans SC', 'MiSans', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+}
+
+html.nm-font-serif body {
+  font-family: 'Noto Serif SC', 'Songti SC', STSong, 'SimSun', serif;
+}
+
 h1,
 h2,
 h3,
@@ -16,6 +25,20 @@ h5,
 h6 {
   margin: 0;
   color: @heading-color;
+}
+
+html.nm-theme-dark body {
+  color: rgb(226 232 240 / 90%);
+  background: #08111d;
+}
+
+html.nm-theme-dark h1,
+html.nm-theme-dark h2,
+html.nm-theme-dark h3,
+html.nm-theme-dark h4,
+html.nm-theme-dark h5,
+html.nm-theme-dark h6 {
+  color: rgb(241 245 249 / 94%);
 }
 
 ::-webkit-scrollbar {
@@ -79,6 +102,19 @@ h6 {
     border-color: var(--nm-primary);
     box-shadow: 0 8px 20px rgb(var(--nm-primary-rgb) / 15%);
   }
+}
+
+html.nm-theme-dark .ant-card,
+html.nm-theme-dark .ant-table,
+html.nm-theme-dark .ant-modal-content,
+html.nm-theme-dark .ant-drawer-content {
+  color: rgb(226 232 240 / 88%) !important;
+  background: rgb(15 23 42 / 92%);
+}
+
+html.nm-theme-dark .ant-card,
+html.nm-theme-dark .ant-table {
+  border-color: rgb(148 163 184 / 12%);
 }
 
 .ant-dropdown-menu {

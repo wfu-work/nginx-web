@@ -1,0 +1,125 @@
+<section class="upstream-list">
+  <div class="page-head">
+    <title-label
+      title="上游服务"
+      description="维护 Nginx upstream 组、负载均衡策略、后端节点和健康检查。"
+    />
+    <div class="head-actions">
+      <button nz-button type="button" (click)="refresh()">
+        <span nz-icon nzType="reload"></span>
+        刷新
+      </button>
+      <button nz-button nzType="primary" type="button" (click)="create()">
+        <span nz-icon nzType="plus"></span>
+        新增上游
+      </button>
+    </div>
+  </div>
+
+  <section class="summary-grid">
+    @for (item of summaryCards(); track item.label) {
+      <article class="summary-card" [class]="'summary-card tone-' + item.tone">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <em>{{ item.hint }}</em>
+      </article>
+    }
+  </section>
+
+  @if (healthResult(); as health) {
+    <section class="health-panel" [class.health-panel-warning]="!health.healthy">
+      <div>
+        <strong>{{ health.name || '上游健康检查' }}</strong>
+        <span>{{ formatTime(health.checkedAt) }}</span>
+      </div>
+      <nz-tag [nzColor]="health.healthy ? 'green' : 'red'">{{ health.healthy ? '健康' : '异常' }}</nz-tag>
+      <div class="health-servers">
+        @for (server of health.servers; track server.serverGuid || server.address) {
+          <span>
+            {{ server.address }}
+            <em>{{ server.healthy ? '正常' : server.message }}</em>
+          </span>
+        } @empty {
+          <span>暂无上游节点</span>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="records-panel">
+    <div class="records-head">
+      <div>
+        <h2>上游记录</h2>
+        <p>按上游名称或策略查找 upstream 配置，并进入详情维护后端节点。</p>
+      </div>
+      <span class="page-size-pill">{{ query.size }} 条/页</span>
+    </div>
+
+    <form nz-form class="filter-bar" (ngSubmit)="search()">
+      <se-container class="filter-fields" [col]="1" [gutter]="0" [nzLayout]="'inline'">
+        <se class="filter-keyword" label="关键词" [hideLabel]="true">
+          <input nz-input name="content" placeholder="上游名称 / 策略" [(ngModel)]="query.content" />
+        </se>
+      </se-container>
+
+      <div class="filter-actions">
+        <button nz-button nzType="primary">
+          <span nz-icon nzType="search"></span>
+          查询
+        </button>
+        <button nz-button type="button" (click)="reset()">
+          <span nz-icon nzType="reload"></span>
+          重置
+        </button>
+      </div>
+    </form>
+
+    <st
+      class="upstream-table"
+      [data]="rows()"
+      [columns]="columns"
+      [page]="page"
+      [pi]="query.page"
+      [ps]="query.size"
+      [total]="total()"
+      [loading]="loading() || healthLoading()"
+      [size]="'middle'"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="upstreamTpl" let-item>
+        <div class="upstream-name">
+          <span class="upstream-avatar" nz-icon nzType="api"></span>
+          <div>
+            <strong>{{ item.name || '-' }}</strong>
+            <span>{{ item.extraConfig ? '包含扩展配置' : '标准 upstream 配置' }}</span>
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="methodTpl" let-item>
+        <nz-tag [nzColor]="item.method ? 'blue' : 'default'">
+          {{ item.method || 'round-robin' }}
+        </nz-tag>
+      </ng-template>
+
+      <ng-template st-row="extraTpl" let-item>
+        <span class="mono">{{ item.extraConfig || '-' }}</span>
+      </ng-template>
+
+      <ng-template st-row="actionTpl" let-item>
+        <div class="row-actions">
+          <a (click)="edit(item)">编辑</a>
+          <a (click)="checkHealth(item)">健康检查</a>
+          <a
+            class="text-error"
+            nz-popconfirm
+            nzPopconfirmTitle="确认删除该上游组？关联节点会一起失效。"
+            (nzOnConfirm)="remove(item)"
+          >
+            删除
+          </a>
+        </div>
+      </ng-template>
+    </st>
+  </section>
+</section>

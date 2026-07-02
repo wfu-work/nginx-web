@@ -14,9 +14,9 @@ import { LayoutDefaultModule } from '@delon/theme/layout-default';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { filter } from 'rxjs';
 
+import { AppearanceSettingsComponent } from './appearance';
 import { AvatarComponent } from './avatar';
 import { HeaderMessage } from './message';
-import { ThemeColorComponent } from './theme-color';
 
 @Component({
   selector: 'basic-header',
@@ -37,7 +37,7 @@ import { ThemeColorComponent } from './theme-color';
       </div>
       <div class="header-actions">
         <header-message />
-        <theme-color />
+        <app-appearance />
         <header-avatar />
       </div>
     </div>
@@ -81,6 +81,25 @@ import { ThemeColorComponent } from './theme-color';
         left: calc(var(--basic-sider-collapsed-width, 80px) + var(--basic-layout-gap, 14px) * 2);
       }
 
+      :host-context(.nm-sider-embedded) .header-container,
+      :host-context(.nm-sider-sidebar) .header-container {
+        top: 0;
+        right: 0;
+        border-radius: 0 0 0 22px;
+      }
+
+      :host-context(.nm-theme-dark) .header-container {
+        color: rgb(226 232 240 / 88%);
+      }
+
+      :host-context(.nm-theme-dark) .header-container-scrolled {
+        border-color: rgb(148 163 184 / 14%);
+        background: rgb(15 23 42 / 82%);
+        box-shadow:
+          0 14px 34px rgb(0 0 0 / 26%),
+          inset 0 1px 0 rgb(255 255 255 / 6%);
+      }
+
       .header-left {
         display: flex;
         align-items: center;
@@ -118,6 +137,10 @@ import { ThemeColorComponent } from './theme-color';
         color: var(--nm-primary);
       }
 
+      :host-context(.nm-theme-dark) .title {
+        color: rgb(241 245 249 / 92%);
+      }
+
       .header-actions {
         display: flex;
         align-items: center;
@@ -125,6 +148,10 @@ import { ThemeColorComponent } from './theme-color';
         gap: 10px;
         min-width: 0;
         color: #56657d;
+      }
+
+      :host-context(.nm-theme-dark) .header-actions {
+        color: rgb(226 232 240 / 78%);
       }
 
       .api-prefix {
@@ -171,7 +198,13 @@ import { ThemeColorComponent } from './theme-color';
     `,
   ],
   standalone: true,
-  imports: [AvatarComponent, HeaderMessage, LayoutDefaultModule, NzIconModule, ThemeColorComponent],
+  imports: [
+    AppearanceSettingsComponent,
+    AvatarComponent,
+    HeaderMessage,
+    LayoutDefaultModule,
+    NzIconModule,
+  ],
 })
 export class BasicHeaderComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

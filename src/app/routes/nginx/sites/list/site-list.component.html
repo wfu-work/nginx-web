@@ -1,0 +1,121 @@
+<section class="site-list">
+  <div class="page-head">
+    <title-label
+      title="站点配置"
+      description="维护 Nginx server 块、域名监听、静态目录、HTTPS 和 Location 代理规则。"
+    />
+    <div class="head-actions">
+      <button nz-button type="button" (click)="refresh()">
+        <span nz-icon nzType="reload"></span>
+        刷新
+      </button>
+      <button nz-button nzType="primary" type="button" (click)="create()">
+        <span nz-icon nzType="plus"></span>
+        新增站点
+      </button>
+    </div>
+  </div>
+
+  <section class="summary-grid">
+    @for (item of summaryCards(); track item.label) {
+      <article class="summary-card" [class]="'summary-card tone-' + item.tone">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <em>{{ item.hint }}</em>
+      </article>
+    }
+  </section>
+
+  <section class="records-panel">
+    <div class="records-head">
+      <div>
+        <h2>站点记录</h2>
+        <p>按站点名称或域名查找 server 配置，并进入详情维护 Location。</p>
+      </div>
+      <span class="page-size-pill">{{ query.size }} 条/页</span>
+    </div>
+
+    <form nz-form class="filter-bar" (ngSubmit)="search()">
+      <se-container class="filter-fields" [col]="1" [gutter]="0" [nzLayout]="'inline'">
+        <se class="filter-keyword" label="关键词" [hideLabel]="true">
+          <input nz-input name="content" placeholder="站点名称 / 域名" [(ngModel)]="query.content" />
+        </se>
+      </se-container>
+
+      <div class="filter-actions">
+        <button nz-button nzType="primary">
+          <span nz-icon nzType="search"></span>
+          查询
+        </button>
+        <button nz-button type="button" (click)="reset()">
+          <span nz-icon nzType="reload"></span>
+          重置
+        </button>
+      </div>
+    </form>
+
+    <st
+      class="site-table"
+      [data]="rows()"
+      [columns]="columns"
+      [page]="page"
+      [pi]="query.page"
+      [ps]="query.size"
+      [total]="total()"
+      [loading]="loading()"
+      [size]="'middle'"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="siteTpl" let-item>
+        <div class="site-name">
+          <span class="site-avatar" nz-icon nzType="appstore"></span>
+          <div>
+            <strong>{{ item.name || '-' }}</strong>
+            <span>{{ item.extraConfig ? '包含扩展配置' : '标准 server 配置' }}</span>
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="serverTpl" let-item>
+        <div class="server-cell">
+          <strong>{{ item.serverName || '-' }}</strong>
+          <span>listen {{ item.listen || '80' }}</span>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="rootTpl" let-item>
+        <div class="meta-cell">
+          <span class="mono">{{ item.root || '-' }}</span>
+          <em>{{ item.index || 'index.html index.htm' }}</em>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="sslTpl" let-item>
+        <nz-tag [nzColor]="item.ssl ? 'blue' : 'default'">
+          {{ item.ssl ? 'HTTPS' : 'HTTP' }}
+        </nz-tag>
+      </ng-template>
+
+      <ng-template st-row="enabledTpl" let-item>
+        <nz-tag [nzColor]="item.enabled === false ? 'default' : 'green'">
+          {{ item.enabled === false ? '停用' : '启用' }}
+        </nz-tag>
+      </ng-template>
+
+      <ng-template st-row="actionTpl" let-item>
+        <div class="row-actions">
+          <a (click)="edit(item)">编辑</a>
+          <a (click)="toggle(item)">{{ item.enabled === false ? '启用' : '停用' }}</a>
+          <a
+            class="text-error"
+            nz-popconfirm
+            nzPopconfirmTitle="确认删除该站点？关联 Location 会一起失效。"
+            (nzOnConfirm)="remove(item)"
+          >
+            删除
+          </a>
+        </div>
+      </ng-template>
+    </st>
+  </section>
+</section>

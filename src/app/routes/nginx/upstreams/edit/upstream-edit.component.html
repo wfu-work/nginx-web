@@ -1,0 +1,200 @@
+<section class="upstream-edit">
+  <div class="page-head">
+    <title-label
+      [title]="isEdit() ? '编辑上游服务' : '新增上游服务'"
+      description="维护 Nginx upstream 组、负载均衡策略、后端节点和健康检查。"
+      [showBack]="true"
+    />
+
+    <div class="head-actions">
+      @if (isEdit()) {
+        <button nz-button type="button" [nzLoading]="healthLoading()" (click)="checkHealth()">
+          <span nz-icon nzType="experiment"></span>
+          健康检查
+        </button>
+      }
+      <button nz-button type="button" (click)="cancel()">
+        <span nz-icon nzType="arrow-left"></span>
+        返回
+      </button>
+      <button
+        nz-button
+        nzType="primary"
+        type="button"
+        [nzLoading]="saving()"
+        [disabled]="!canSubmit()"
+        (click)="save()"
+      >
+        <span nz-icon nzType="save"></span>
+        保存
+      </button>
+    </div>
+  </div>
+
+  <form nz-form class="edit-panel" (ngSubmit)="save()">
+    <section class="intro-card">
+      <span class="intro-icon" nz-icon nzType="api"></span>
+      <div>
+        <strong>上游服务说明</strong>
+        <p>上游服务对应 Nginx upstream 块。上游节点会被渲染为 server 指令，可设置权重、失败策略、backup 或 down 状态。</p>
+      </div>
+    </section>
+
+    @if (healthResult(); as health) {
+      <section class="health-panel" [class.health-panel-warning]="!health.healthy">
+        <div>
+          <strong>{{ health.name || '健康检查结果' }}</strong>
+          <span>{{ formatTime(health.checkedAt) }}</span>
+        </div>
+        <nz-tag [nzColor]="health.healthy ? 'green' : 'red'">{{ health.healthy ? '健康' : '异常' }}</nz-tag>
+        <div class="health-servers">
+          @for (server of health.servers; track server.serverGuid || server.address) {
+            <span>
+              {{ server.address }}
+              <em>{{ server.healthy ? '正常' : server.message }}</em>
+            </span>
+          } @empty {
+            <span>暂无上游节点</span>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="form-section">
+      <div class="section-head">
+        <h2>基础信息</h2>
+        <p>配置 upstream 名称、调度策略和需要直接写入 upstream 块的扩展指令。</p>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+        <se label="上游名称" [required]="true" error="请填写上游名称">
+          <input nz-input name="name" placeholder="backend_pool" [(ngModel)]="model.name" />
+        </se>
+
+        <se label="策略">
+          <input nz-input name="method" placeholder="least_conn / ip_hash" [(ngModel)]="model.method" />
+        </se>
+
+        <se label="扩展配置" [col]="1">
+          <textarea
+            nz-input
+            rows="5"
+            name="extraConfig"
+            placeholder="keepalive 32;"
+            [(ngModel)]="model.extraConfig"
+          ></textarea>
+        </se>
+      </se-container>
+    </section>
+
+    <section class="form-section server-section">
+      <div class="section-head">
+        <h2>上游节点</h2>
+        <p>维护 upstream 下的 server 地址、权重、失败策略和调度状态。</p>
+      </div>
+
+      @if (!isEdit()) {
+        <nz-alert
+          nzType="info"
+          nzMessage="请先保存上游组"
+          nzDescription="上游创建接口当前不返回 guid，保存后从上游列表进入编辑页即可维护节点。"
+          nzShowIcon
+        />
+      } @else {
+        <div class="server-editor">
+          <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+            <se label="地址" [required]="true" error="请填写地址">
+              <input nz-input name="serverAddress" placeholder="127.0.0.1:8080" [(ngModel)]="serverModel.address" />
+            </se>
+
+            <se label="权重">
+              <nz-input-number name="serverWeight" [(ngModel)]="serverModel.weight" />
+            </se>
+
+            <se label="max_fails">
+              <nz-input-number name="serverMaxFails" [(ngModel)]="serverModel.maxFails" />
+            </se>
+
+            <se label="fail_timeout">
+              <input nz-input name="serverFailTimeout" placeholder="30s" [(ngModel)]="serverModel.failTimeout" />
+            </se>
+
+            <se label="backup">
+              <nz-switch name="serverBackup" [(ngModel)]="serverModel.backup" />
+            </se>
+
+            <se label="down">
+              <nz-switch name="serverDown" [(ngModel)]="serverModel.down" />
+            </se>
+
+            <se label="排序">
+              <nz-input-number name="serverSort" [(ngModel)]="serverModel.sort" />
+            </se>
+          </se-container>
+
+          <div class="server-actions">
+            <button nz-button nzType="primary" type="button" [nzLoading]="serverSaving()" [disabled]="!canSaveServer()" (click)="saveServer()">
+              <span nz-icon nzType="plus"></span>
+              {{ serverModel.guid ? '更新节点' : '添加节点' }}
+            </button>
+            <button nz-button type="button" (click)="resetServer()">
+              <span nz-icon nzType="reload"></span>
+              清空
+            </button>
+          </div>
+
+          <st
+            class="server-table"
+            [data]="servers()"
+            [columns]="serverColumns"
+            [page]="serverPage"
+            [size]="'middle'"
+          >
+            <ng-template st-row="addressTpl" let-item>
+              <span class="mono">{{ item.address || '-' }}</span>
+            </ng-template>
+
+            <ng-template st-row="weightTpl" let-item>
+              <nz-tag>{{ item.weight || 1 }}</nz-tag>
+            </ng-template>
+
+            <ng-template st-row="failTpl" let-item>
+              <div class="server-meta">
+                <strong>{{ item.maxFails || 3 }} 次</strong>
+                <span>{{ item.failTimeout || '30s' }}</span>
+              </div>
+            </ng-template>
+
+            <ng-template st-row="stateTpl" let-item>
+              @if (item.down) {
+                <nz-tag nzColor="red">down</nz-tag>
+              } @else if (item.backup) {
+                <nz-tag nzColor="gold">backup</nz-tag>
+              } @else {
+                <nz-tag nzColor="green">active</nz-tag>
+              }
+            </ng-template>
+
+            <ng-template st-row="sortTpl" let-item>
+              <span>{{ item.sort ?? 0 }}</span>
+            </ng-template>
+
+            <ng-template st-row="serverActionTpl" let-item>
+              <div class="row-actions">
+                <a (click)="editServer(item)">编辑</a>
+                <a
+                  class="text-error"
+                  nz-popconfirm
+                  nzPopconfirmTitle="确认删除该上游节点？"
+                  (nzOnConfirm)="removeServer(item)"
+                >
+                  删除
+                </a>
+              </div>
+            </ng-template>
+          </st>
+        </div>
+      }
+    </section>
+  </form>
+</section>

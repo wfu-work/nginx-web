@@ -1,0 +1,126 @@
+<section class="node-list">
+  <div class="page-head">
+    <title-label
+      title="Agent 节点"
+      description="查看 Agent 注册、心跳、版本和任务转发状态。"
+    />
+    <div class="head-actions">
+      <button nz-button type="button" (click)="refresh()">
+        <span nz-icon nzType="reload"></span>
+        刷新
+      </button>
+      <button nz-button nzType="primary" type="button" (click)="create()">
+        <span nz-icon nzType="plus"></span>
+        新增节点
+      </button>
+    </div>
+  </div>
+
+  <section class="summary-grid">
+    @for (item of summaryCards(); track item.label) {
+      <article class="summary-card" [class]="'summary-card tone-' + item.tone">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <em>{{ item.hint }}</em>
+      </article>
+    }
+  </section>
+
+  <section class="records-panel">
+    <div class="records-head">
+      <div>
+        <h2>节点记录</h2>
+        <p>筛选在线状态、启用状态或 Agent 标识后查看节点接入情况。</p>
+      </div>
+      <span class="page-size-pill">{{ query.size }} 条/页</span>
+    </div>
+
+    <form nz-form class="filter-bar" (ngSubmit)="search()">
+      <se-container class="filter-fields" [col]="1" [gutter]="0" [nzLayout]="'inline'">
+        <se class="filter-keyword" label="关键词" [hideLabel]="true">
+          <input nz-input name="keyword" placeholder="名称 / Agent ID / 地址 / 标签" [(ngModel)]="query.keyword" />
+        </se>
+
+        <se class="filter-choice" label="状态" [hideLabel]="true">
+          <nz-select name="status" [(ngModel)]="query.status">
+            <nz-option nzLabel="全部状态" nzValue="" />
+            <nz-option nzLabel="在线" nzValue="online" />
+            <nz-option nzLabel="离线" nzValue="offline" />
+          </nz-select>
+        </se>
+
+        <se class="filter-choice" label="启用" [hideLabel]="true">
+          <nz-select name="enabled" [(ngModel)]="query.enabled">
+            <nz-option nzLabel="全部启用" nzValue="" />
+            <nz-option nzLabel="启用" nzValue="true" />
+            <nz-option nzLabel="停用" nzValue="false" />
+          </nz-select>
+        </se>
+      </se-container>
+
+      <div class="filter-actions">
+        <button nz-button nzType="primary">
+          <span nz-icon nzType="search"></span>
+          查询
+        </button>
+        <button nz-button type="button" (click)="reset()">
+          <span nz-icon nzType="reload"></span>
+          重置
+        </button>
+      </div>
+    </form>
+
+    <st
+      class="node-table"
+      [data]="rows()"
+      [columns]="columns"
+      [page]="page"
+      [pi]="query.page"
+      [ps]="query.size"
+      [total]="total()"
+      [loading]="loading()"
+      [size]="'middle'"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="nodeTpl" let-item>
+        <div class="node-name">
+          <span class="node-avatar" nz-icon nzType="cluster"></span>
+          <div>
+            <strong>{{ item.name || '-' }}</strong>
+            <span>{{ item.description || 'Agent 节点' }}</span>
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="agentTpl" let-item>
+        <div class="agent-cell">
+          <strong>{{ item.agentId || '-' }}</strong>
+          <span>{{ item.version || '版本未知' }}</span>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="metaTpl" let-item>
+        <div class="meta-cell">
+          <span class="mono">{{ item.address || '-' }}</span>
+          <em>{{ item.labels || '-' }}</em>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="statusTpl" let-item>
+        <nz-tag [nzColor]="item.status === 'online' ? 'green' : 'default'">
+          {{ item.status === 'online' ? '在线' : '离线' }}
+        </nz-tag>
+      </ng-template>
+
+      <ng-template st-row="enabledTpl" let-item>
+        <nz-tag [nzColor]="item.enabled === false ? 'default' : 'blue'">
+          {{ item.enabled === false ? '停用' : '启用' }}
+        </nz-tag>
+      </ng-template>
+
+      <ng-template st-row="lastSeenTpl" let-item>
+        <span class="mono">{{ formatTime(item.lastSeenAt) }}</span>
+      </ng-template>
+    </st>
+  </section>
+</section>

@@ -1,7 +1,7 @@
 <section class="guide-page">
   <title-label
     title="使用指南"
-    description="按实例、站点、上游、配置发布、观测审计的顺序完成 Nginx 管理闭环。"
+    description="按 Agent 节点、站点、上游、配置发布、观测审计的顺序完成 Nginx 管理闭环。"
   />
 
   <div class="guide-flow">
@@ -24,12 +24,98 @@
     }
   </div>
 
+  <section class="install-panel">
+    <div class="section-heading">
+      <div>
+        <h2>Agent 客户端安装</h2>
+        <span>每台 Nginx 服务器运行一个 nginx-agent，Agent 主动注册、上报心跳并轮询配置发布、日志和运行操作任务。</span>
+      </div>
+      <a nz-button nzType="primary" routerLink="/nginx/nodes">
+        <i nz-icon nzType="cluster"></i>
+        查看节点
+      </a>
+    </div>
+
+    <div class="install-method install-method-primary">
+      <div class="method-head">
+        <div>
+          <h3>在线安装</h3>
+          <p>Linux 节点推荐使用中心端下载接口提供的安装脚本。脚本负责下载匹配平台的 Agent、写入 systemd 服务并启动。</p>
+        </div>
+        <code>nginx-agent.service</code>
+      </div>
+
+      <pre class="command-block"><code>{{ agentOnlineCommand }}</code></pre>
+
+      <p class="method-note">
+        安装前先在后端 <code>config.yaml</code> 中配置 <code>agent.shared-token</code>。如果当前环境还没有接入下载接口，可使用下面的手动安装方式。
+      </p>
+
+      <div class="file-list">
+        @for (file of agentFiles; track file) {
+          <code>{{ file }}</code>
+        }
+      </div>
+    </div>
+
+    <div class="install-grid">
+      <article class="install-method">
+        <div class="method-head">
+          <div>
+            <h3>手动下载</h3>
+            <p>无法在线执行脚本时，下载对应平台的已启用版本，上传到目标服务器后手动启动或写入 systemd。</p>
+          </div>
+          <code>Download</code>
+        </div>
+
+        <div class="download-list">
+          @for (item of agentDownloads; track item.platform + item.arch) {
+            <div>
+              <i nz-icon nzType="download"></i>
+              <strong>{{ item.platform }} {{ item.arch }}</strong>
+            </div>
+          }
+        </div>
+      </article>
+
+      <article class="install-method">
+        <div class="method-head">
+          <div>
+            <h3>手动启动示例</h3>
+            <p>边缘客户端不需要 YAML 配置文件，节点标识、名称、地址和标签都可以通过启动参数传入。</p>
+          </div>
+          <code>CLI</code>
+        </div>
+
+        <pre class="command-block command-block-compact"><code>{{ agentDirectCommand }}</code></pre>
+
+        <div class="flag-list">
+          @for (item of agentFlags; track item.flag) {
+            <span><code>{{ item.flag }}</code>{{ item.desc }}</span>
+          }
+        </div>
+      </article>
+    </div>
+
+    <div class="install-method">
+      <div class="method-head">
+        <div>
+          <h3>手动构建并注册为服务</h3>
+          <p>从源码构建二进制后安装到节点本机，适合内网环境或还没有发布包的部署阶段。</p>
+        </div>
+        <code>systemd</code>
+      </div>
+
+      <pre class="command-block"><code>{{ agentManualCommand }}</code></pre>
+    </div>
+  </section>
+
   <nz-card class="guide-card" [nzBordered]="false">
     <h2>第一版推荐路径</h2>
     <div class="connect-grid">
       <div>
-        <span>1. 实例</span>
-        <code>/nginx/instances</code>
+        <span>1. 节点</span>
+        <code>/nginx/nodes</code>
       </div>
       <div>
         <span>2. 建模</span>

@@ -1,0 +1,106 @@
+<section class="config-page">
+  <div class="page-head">
+    <title-label
+      title="发布任务"
+      description="查看配置发布和回滚任务的状态、目标路径、耗时与失败说明。"
+    />
+
+    <div class="head-actions">
+      <button nz-button type="button" [nzLoading]="loading()" (click)="refresh()">
+        <span nz-icon nzType="reload"></span>
+        刷新
+      </button>
+      <button nz-button nzType="primary" type="button" routerLink="/configs/publish">
+        <span nz-icon nzType="deployment-unit"></span>
+        去发布
+      </button>
+    </div>
+  </div>
+
+  <section class="summary-grid">
+    @for (item of summaryCards(); track item.label) {
+      <article class="summary-card" [class]="'summary-card tone-' + item.tone">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <em>{{ item.hint }}</em>
+      </article>
+    }
+  </section>
+
+  <section class="records-panel">
+    <div class="records-head">
+      <div>
+        <h2>任务记录</h2>
+        <p>按动作、状态、原因或消息搜索发布记录，定位失败节点和目标文件。</p>
+      </div>
+      <span class="page-size-pill">{{ query.size }} 条/页</span>
+    </div>
+
+    <form nz-form class="filter-bar" (ngSubmit)="search()">
+      <se-container class="filter-fields" [col]="1" [gutter]="0" [nzLayout]="'inline'">
+        <se class="filter-keyword" label="关键词" [hideLabel]="true">
+          <input nz-input name="content" placeholder="动作 / 状态 / 消息 / 原因" [(ngModel)]="query.content" />
+        </se>
+      </se-container>
+
+      <div class="filter-actions">
+        <button nz-button nzType="primary">
+          <span nz-icon nzType="search"></span>
+          查询
+        </button>
+        <button nz-button type="button" (click)="reset()">
+          <span nz-icon nzType="reload"></span>
+          重置
+        </button>
+      </div>
+    </form>
+
+    <st
+      class="config-table"
+      [data]="rows()"
+      [columns]="columns"
+      [page]="page"
+      [pi]="query.page"
+      [ps]="query.size"
+      [total]="total()"
+      [loading]="loading()"
+      [size]="'middle'"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="taskTpl" let-item>
+        <div class="task-cell">
+          <strong>{{ actionText(item.action) }}</strong>
+          <span class="mono">{{ item.guid || '-' }}</span>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="statusTpl" let-item>
+        <nz-tag [nzColor]="statusColor(item)">
+          {{ statusText(item) }}
+        </nz-tag>
+      </ng-template>
+
+      <ng-template st-row="versionTpl" let-item>
+        <span class="mono">{{ item.versionGuid || '-' }}</span>
+      </ng-template>
+
+      <ng-template st-row="targetTpl" let-item>
+        <div class="path-cell">
+          <strong class="mono">{{ item.targetPath || '-' }}</strong>
+          <span class="mono">{{ item.backupPath || '无备份路径' }}</span>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="durationTpl" let-item>
+        <span class="mono">{{ durationText(item.durationMs) }}</span>
+      </ng-template>
+
+      <ng-template st-row="messageTpl" let-item>
+        <div class="meta-cell">
+          <strong>{{ item.message || '-' }}</strong>
+          <span>{{ item.reason || '-' }}</span>
+        </div>
+      </ng-template>
+    </st>
+  </section>
+</section>

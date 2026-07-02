@@ -1,0 +1,144 @@
+<section class="config-page">
+  <div class="page-head">
+    <title-label
+      title="校验发布"
+      description="选择目标 Agent 节点，执行 nginx -t 校验并下发配置 reload。"
+    />
+
+    <div class="head-actions">
+      <button nz-button type="button" [nzLoading]="loading()" (click)="refresh()">
+        <span nz-icon nzType="reload"></span>
+        刷新
+      </button>
+      <button nz-button type="button" routerLink="/configs/versions">
+        <span nz-icon nzType="history"></span>
+        版本历史
+      </button>
+    </div>
+  </div>
+
+  @if (!nodes().length) {
+    <nz-alert
+      nzType="warning"
+      nzMessage="没有可用 Agent 节点"
+      nzDescription="请先在节点管理中确认 Agent 已注册并启用，然后再执行配置校验或发布。"
+      nzShowIcon
+    />
+  }
+
+  <div class="split-grid">
+    <form nz-form class="form-panel" (ngSubmit)="validateConfig()">
+      <div class="panel-head">
+        <div>
+          <h2>发布参数</h2>
+          <p>节点用于执行校验、写入托管配置并 reload；版本和配置文本二选一即可。</p>
+        </div>
+      </div>
+
+      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+        <se label="目标节点" [required]="true" error="请选择节点">
+          <nz-select name="nodeGuid" nzPlaceHolder="选择 Agent 节点" [(ngModel)]="model.nodeGuid">
+            @for (node of nodes(); track node.guid || node.agentId) {
+              <nz-option [nzValue]="node.guid || ''" [nzLabel]="nodeLabel(node)" />
+            }
+          </nz-select>
+        </se>
+
+        <se label="站点">
+          <nz-select name="siteGuid" nzAllowClear nzPlaceHolder="全部启用站点" [(ngModel)]="model.siteGuid">
+            <nz-option nzValue="" nzLabel="全部启用站点" />
+            @for (site of sites(); track site.guid || site.name) {
+              <nz-option [nzValue]="site.guid || ''" [nzLabel]="site.name + ' / ' + site.serverName" />
+            }
+          </nz-select>
+        </se>
+
+        <se label="发布版本">
+          <nz-select
+            name="versionGuid"
+            nzAllowClear
+            nzPlaceHolder="选择已保存版本"
+            [(ngModel)]="model.versionGuid"
+            (ngModelChange)="loadVersion()"
+          >
+            @for (version of versions(); track version.guid || version.versionNo) {
+              <nz-option [nzValue]="version.guid || ''" [nzLabel]="versionLabel(version)" />
+            }
+          </nz-select>
+        </se>
+
+        <se label="保存校验">
+          <label nz-checkbox name="save" [(ngModel)]="model.save">校验时保存版本</label>
+        </se>
+
+        <se label="原因" [col]="1">
+          <input nz-input name="reason" placeholder="本次发布说明" [(ngModel)]="model.reason" />
+        </se>
+
+        <se label="配置文本" [col]="1">
+          <textarea
+            class="config-editor"
+            nz-input
+            rows="14"
+            name="config"
+            placeholder="可先生成配置，也可载入历史版本；为空时后端会按站点数据重新生成。"
+            [(ngModel)]="model.config"
+          ></textarea>
+        </se>
+      </se-container>
+
+      <div class="action-strip">
+        <button nz-button type="button" [nzLoading]="rendering()" (click)="renderConfig()">
+          <span nz-icon nzType="file-search"></span>
+          生成配置
+        </button>
+        <button nz-button nzType="primary" [nzLoading]="validating()" [disabled]="!canRunNodeTask()">
+          <span nz-icon nzType="check-circle"></span>
+          语法校验
+        </button>
+        <button
+          nz-button
+          nzType="primary"
+          type="button"
+          nz-popconfirm
+          nzPopconfirmTitle="确认发布配置并 reload？"
+          [nzLoading]="publishing()"
+          [disabled]="!canRunNodeTask()"
+          (nzOnConfirm)="publishConfig()"
+        >
+          <span nz-icon nzType="deployment-unit"></span>
+          发布并 reload
+        </button>
+      </div>
+    </form>
+
+    <section class="result-panel">
+      <h2>执行结果</h2>
+      <p>校验和发布结果会按目标节点返回，失败时不会继续覆盖配置。</p>
+
+      <div class="result-stack">
+        @if (validateResult()) {
+          <div>
+            <nz-tag [nzColor]="statusColor(validateResult()?.success)">
+              {{ validateResult()?.success ? '校验通过' : '校验失败' }}
+            </nz-tag>
+            <pre class="code-block">{{ asText(validateResult()) }}</pre>
+          </div>
+        }
+
+        @if (publishResult()) {
+          <div>
+            <nz-tag [nzColor]="statusColor(publishResult()?.success)">
+              {{ publishResult()?.success ? '发布成功' : '发布失败' }}
+            </nz-tag>
+            <pre class="code-block">{{ asText(publishResult()) }}</pre>
+          </div>
+        }
+
+        @if (!validateResult() && !publishResult()) {
+          <pre class="code-block">选择目标节点后，可先校验再发布。</pre>
+        }
+      </div>
+    </section>
+  </div>
+</section>

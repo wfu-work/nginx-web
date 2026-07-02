@@ -1,9 +1,23 @@
 import { NgClass } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LogoComponent } from '@shared';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
+
+import { AppearanceSettingsService } from '../../../shared/services/appearance-settings.service';
+
+interface MenuChild {
+  label: string;
+  link: string;
+  icon: string;
+}
+
+interface MenuGroup {
+  title: string;
+  icon: string;
+  children: MenuChild[];
+}
 
 @Component({
   selector: 'basic-menus',
@@ -35,50 +49,37 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
           nzMode="inline"
           [nzInlineCollapsed]="isCollapsed"
         >
-          <li nz-menu-item nzMatchRouter routerLink="/nginx/dashboard">
-            <i nz-icon nzType="dashboard"></i>
-            <span>工作台</span>
-          </li>
-          <li nz-submenu nzTitle="运行管理" nzIcon="cloud-server">
-            <ul>
-              <li nz-menu-item nzMatchRouter routerLink="/nginx/nodes">
-                <span>节点管理</span>
+          @if (appearance.current().menuDisplay === 'grouped' && !isCollapsed) {
+            @for (section of groupedMenuSections; track section.title; let first = $first) {
+              @if (!first) {
+                <li class="menu-section-divider"></li>
+              }
+              <li class="menu-section-title">{{ section.title }}</li>
+              @for (child of section.children; track child.link) {
+                <li class="menu-section-item" nz-menu-item nzMatchRouter [routerLink]="child.link">
+                  <i nz-icon [nzType]="child.icon"></i>
+                  <span>{{ child.label }}</span>
+                </li>
+              }
+            }
+          } @else {
+            <li nz-menu-item nzMatchRouter routerLink="/nginx/dashboard">
+              <i nz-icon nzType="dashboard"></i>
+              <span>工作台</span>
+            </li>
+            @for (group of menuGroups; track group.title) {
+              <li nz-submenu [nzTitle]="group.title" [nzIcon]="group.icon">
+                <ul>
+                  @for (child of group.children; track child.link) {
+                    <li nz-menu-item nzMatchRouter [routerLink]="child.link">
+                      <i nz-icon [nzType]="child.icon"></i>
+                      <span>{{ child.label }}</span>
+                    </li>
+                  }
+                </ul>
               </li>
-              <li nz-menu-item nzMatchRouter routerLink="/nginx/instances">
-                <span>实例管理</span>
-              </li>
-              <li nz-menu-item nzMatchRouter routerLink="/nginx/sites">
-                <span>站点配置</span>
-              </li>
-              <li nz-menu-item nzMatchRouter routerLink="/nginx/upstreams">
-                <span>上游服务</span>
-              </li>
-              <li nz-menu-item nzMatchRouter routerLink="/nginx/certificates">
-                <span>证书管理</span>
-              </li>
-            </ul>
-          </li>
-          <li nz-submenu nzTitle="配置发布" nzIcon="deployment-unit">
-            <ul>
-              <li nz-menu-item nzMatchRouter routerLink="/nginx/configs">
-                <span>预览 / 校验 / 发布</span>
-              </li>
-            </ul>
-          </li>
-          <li nz-submenu nzTitle="观测审计" nzIcon="audit">
-            <ul>
-              <li nz-menu-item nzMatchRouter routerLink="/nginx/logs">
-                <span>日志与审计</span>
-              </li>
-            </ul>
-          </li>
-          <li nz-submenu nzTitle="系统" nzIcon="setting">
-            <ul>
-              <li nz-menu-item nzMatchRouter routerLink="/nginx/settings">
-                <span>运行设置</span>
-              </li>
-            </ul>
-          </li>
+            }
+          }
         </ul>
       </div>
 
@@ -217,6 +218,32 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
         cursor: pointer;
         border: 0;
         background: transparent;
+      }
+
+      :host-context(.nm-sider-sidebar) .logo-a,
+      :host-context(.nm-theme-dark) .logo-a {
+        color: rgb(241 245 249 / 94%);
+      }
+
+      :host-context(.nm-sider-sidebar) .sider-top p,
+      :host-context(.nm-theme-dark) .sider-top p {
+        color: rgb(203 213 225 / 62%) !important;
+      }
+
+      :host-context(.nm-sider-sidebar) .sidebar-bottom,
+      :host-context(.nm-theme-dark) .sidebar-bottom {
+        border-top-color: rgb(148 163 184 / 12%);
+      }
+
+      :host-context(.nm-sider-sidebar) .sidebar-bottom-item,
+      :host-context(.nm-theme-dark) .sidebar-bottom-item {
+        color: rgb(203 213 225 / 78%);
+      }
+
+      :host-context(.nm-sider-sidebar) .sidebar-bottom-item:hover,
+      :host-context(.nm-theme-dark) .sidebar-bottom-item:hover {
+        color: #fff;
+        background: rgb(var(--nm-primary-rgb) / 14%);
       }
 
       :host-context(.app-sider.ant-layout-sider-collapsed) .sider-top {
@@ -401,6 +428,55 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
         .ant-menu-sub.ant-menu-inline .ant-menu-item-selected a {
           color: var(--nm-primary) !important;
         }
+
+        .menu-section-divider {
+          height: 1px;
+          margin: 10px 8px 12px;
+          background: rgb(var(--nm-primary-rgb) / 8%);
+          list-style: none;
+          pointer-events: none;
+        }
+
+        .menu-section-title {
+          margin: 0 0 4px;
+          padding: 0 14px;
+          color: #8b96a6;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0;
+          line-height: 24px;
+          list-style: none;
+          pointer-events: none;
+        }
+
+        .menu-list.ant-menu-inline .menu-section-item {
+          height: 42px;
+          margin: 0 6px 4px;
+          padding-inline: 14px !important;
+          border-radius: 999px;
+          font-size: 14px;
+          font-weight: 600;
+          line-height: 42px;
+        }
+
+        .menu-list.ant-menu-inline .menu-section-item .anticon {
+          width: 16px;
+          height: 16px;
+          margin-right: 10px;
+          font-size: 16px;
+          color: #737b8a;
+        }
+
+        .menu-list.ant-menu-inline .menu-section-item.ant-menu-item-selected {
+          color: #172033 !important;
+          background: rgb(var(--nm-primary-rgb) / 10%) !important;
+          box-shadow: none;
+        }
+
+        .menu-list.ant-menu-inline .menu-section-item.ant-menu-item-selected .anticon,
+        .menu-list.ant-menu-inline .menu-section-item.ant-menu-item-selected a {
+          color: #172033 !important;
+        }
       }
 
       :host-context(.app-sider.ant-layout-sider-collapsed) ::ng-deep {
@@ -489,14 +565,86 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
           display: none;
         }
       }
+
+      :host-context(.nm-sider-sidebar) ::ng-deep,
+      :host-context(.nm-theme-dark) ::ng-deep {
+        .menu-section-divider {
+          background: rgb(148 163 184 / 12%);
+        }
+
+        .menu-section-title {
+          color: rgb(203 213 225 / 50%);
+        }
+
+        .menu-list.ant-menu-inline .menu-section-item .anticon {
+          color: rgb(203 213 225 / 65%);
+        }
+
+        .menu-list.ant-menu-inline .menu-section-item.ant-menu-item-selected {
+          color: #fff !important;
+          background: rgb(var(--nm-primary-rgb) / 24%) !important;
+        }
+
+        .menu-list.ant-menu-inline .menu-section-item.ant-menu-item-selected .anticon,
+        .menu-list.ant-menu-inline .menu-section-item.ant-menu-item-selected a {
+          color: #fff !important;
+        }
+      }
     `,
   ],
   imports: [NgClass, RouterLink, LogoComponent, NzIconModule, NzMenuModule],
 })
 export class BasicMenusComponent {
+  protected readonly appearance = inject(AppearanceSettingsService);
+
   @Input() isCollapsed = false;
   @Input() spin = false;
 
   @Output() readonly loadResourcesChange = new EventEmitter<boolean>();
   @Output() readonly logout = new EventEmitter<void>();
+
+  protected readonly menuGroups: MenuGroup[] = [
+    {
+      title: '运行管理',
+      icon: 'cloud-server',
+      children: [
+        { label: '节点管理', link: '/nginx/nodes', icon: 'cluster' },
+        { label: '站点配置', link: '/nginx/sites', icon: 'appstore' },
+        { label: '上游服务', link: '/nginx/upstreams', icon: 'api' },
+        { label: '证书管理', link: '/nginx/certificates', icon: 'safety-certificate' },
+      ],
+    },
+    {
+      title: '配置发布',
+      icon: 'deployment-unit',
+      children: [
+        { label: '配置预览', link: '/configs/preview', icon: 'file-search' },
+        { label: '校验发布', link: '/configs/publish', icon: 'deployment-unit' },
+        { label: '版本历史', link: '/configs/versions', icon: 'history' },
+        { label: '发布任务', link: '/configs/tasks', icon: 'profile' },
+      ],
+    },
+    {
+      title: '观测审计',
+      icon: 'audit',
+      children: [
+        { label: '日志与审计', link: '/nginx/logs', icon: 'audit' },
+        { label: '审计记录', link: '/audit', icon: 'profile' },
+      ],
+    },
+    {
+      title: '系统',
+      icon: 'setting',
+      children: [{ label: '运行设置', link: '/nginx/settings', icon: 'setting' }],
+    },
+  ];
+
+  protected readonly groupedMenuSections: MenuGroup[] = [
+    {
+      title: '概览',
+      icon: 'dashboard',
+      children: [{ label: '工作台', link: '/nginx/dashboard', icon: 'dashboard' }],
+    },
+    ...this.menuGroups,
+  ];
 }

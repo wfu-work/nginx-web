@@ -36,7 +36,7 @@ export class ConsLogsComponent {
     {
       time: '14:32:01.045',
       level: 'info',
-      message: 'Connected to nginx instance "default"; collecting process and stub_status metrics.',
+      message: 'Connected to nginx Agent node; collecting process and stub_status metrics.',
     },
     {
       time: '14:32:02.112',

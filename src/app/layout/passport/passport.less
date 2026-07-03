@@ -139,20 +139,82 @@
 [data-theme='dark'] {
   :host ::ng-deep {
     .container {
-      background: #141414;
+      color: rgb(235 245 239 / 92%);
+      background:
+        linear-gradient(118deg, rgb(4 8 8) 0%, rgb(10 18 16) 42%, rgb(5 13 15) 100%),
+        #070c0d;
+
+      &::before {
+        inset: -14% -16%;
+        transform: rotate(-3deg);
+        opacity: 0.9;
+        background:
+          linear-gradient(116deg, transparent 0 24%, rgb(105 181 46 / 14%) 32%, transparent 45%),
+          linear-gradient(128deg, transparent 0 50%, rgb(56 189 178 / 12%) 59%, transparent 72%),
+          linear-gradient(138deg, transparent 0 70%, rgb(255 255 255 / 8%) 78%, transparent 88%);
+        filter: blur(18px);
+      }
+
+      &::after {
+        inset: auto -10% 0;
+        height: 34%;
+        opacity: 0.8;
+        background: linear-gradient(180deg, transparent 0%, rgb(105 181 46 / 10%) 100%);
+        filter: blur(26px);
+      }
+    }
+
+    .wrap {
+      border-color: rgb(176 221 173 / 18%);
+      background:
+        linear-gradient(150deg, rgb(24 35 31 / 86%) 0%, rgb(10 17 16 / 92%) 62%, rgb(8 16 18 / 88%) 100%);
+      box-shadow:
+        0 28px 90px rgb(0 0 0 / 42%),
+        0 0 0 1px rgb(255 255 255 / 3%) inset,
+        0 1px 0 rgb(255 255 255 / 12%) inset;
     }
 
     .title {
-      color: fade(@white, 85%);
+      color: rgb(246 252 248 / 96%);
+      text-shadow: 0 10px 30px rgb(0 0 0 / 32%);
     }
 
     .desc {
-      color: fade(@white, 45%);
+      color: rgb(195 213 205 / 70%);
+    }
+
+    .logo {
+      filter: drop-shadow(0 10px 22px rgb(105 181 46 / 22%));
+    }
+
+    .global-footer {
+      margin-top: 42px;
+      margin-bottom: 6px;
+    }
+
+    .global-footer__links-item {
+      color: rgb(191 210 201 / 62%);
+
+      &:hover {
+        color: rgb(229 245 235 / 92%);
+      }
+    }
+
+    .global-footer__copyright {
+      color: rgb(175 197 188 / 60%);
+
+      a {
+        color: rgb(143 196 255 / 86%);
+
+        &:hover {
+          color: #b7d6ff;
+        }
+      }
     }
 
     @media (min-width: @screen-md-min) {
       .container {
-        background-image: none;
+        justify-content: center;
       }
     }
   }

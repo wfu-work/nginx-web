@@ -13,6 +13,7 @@ interface GuideStep {
 interface AgentDownloadItem {
   platform: string;
   arch: string;
+  label: string;
 }
 
 interface AgentFlag {
@@ -65,10 +66,10 @@ sudo systemctl status nginx-agent`;
   -labels env=prod,region=cn`;
 
   protected readonly agentDownloads: AgentDownloadItem[] = [
-    { platform: 'linux', arch: 'amd64' },
-    { platform: 'linux', arch: 'arm64' },
-    { platform: 'darwin', arch: 'arm64' },
-    { platform: 'windows', arch: 'amd64' },
+    { platform: 'linux', arch: 'amd64', label: 'Linux x86_64' },
+    { platform: 'linux', arch: 'arm64', label: 'Linux ARM64' },
+    { platform: 'darwin', arch: 'arm64', label: 'macOS ARM64' },
+    { platform: 'windows', arch: 'amd64', label: 'Windows x86_64' },
   ];
 
   protected readonly agentFlags: AgentFlag[] = [
@@ -140,4 +141,8 @@ sudo systemctl status nginx-agent`;
     'Agent 负责上报节点状态并轮询任务，中心端不需要直接 SSH 到业务服务器。',
     'stub_status URL 为空时不影响工作台运行，但连接数和请求量会显示为空。',
   ];
+
+  protected agentDownloadHref(item: AgentDownloadItem): string {
+    return `/api/downloads/nginx-agent?os=${item.platform}&arch=${item.arch}`;
+  }
 }

@@ -45,7 +45,7 @@ export class ConfigVersionsComponent implements OnInit {
     page: 1,
     size: 20,
     content: '',
-    desc: 'createTime',
+    desc: 'create_time',
   };
 
   protected readonly page: STPage = {
@@ -94,7 +94,7 @@ export class ConfigVersionsComponent implements OnInit {
   protected reset(): void {
     this.query.page = 1;
     this.query.content = '';
-    this.query.desc = 'createTime';
+    this.query.desc = 'create_time';
     this.load();
   }
 
@@ -120,7 +120,12 @@ export class ConfigVersionsComponent implements OnInit {
   }
 
   protected diff(): void {
-    if (!this.diffModel.fromVersionGuid && !this.diffModel.toVersionGuid && !this.diffModel.fromConfig && !this.diffModel.toConfig) {
+    if (
+      !this.diffModel.fromVersionGuid &&
+      !this.diffModel.toVersionGuid &&
+      !this.diffModel.fromConfig &&
+      !this.diffModel.toConfig
+    ) {
       this.message.warning('请选择要对比的版本');
       return;
     }
@@ -246,16 +251,18 @@ export class ConfigVersionsComponent implements OnInit {
   }
 
   private loadNodes(): void {
-    this.nodeService.list({ page: 1, size: 100, keyword: '', status: '', enabled: 'true', desc: 'createTime' }).subscribe({
-      next: (result) => {
-        const nodes = result.data || [];
-        this.nodes.set(nodes);
-        if (!this.rollbackNodeGuid && nodes.length) {
-          const node = nodes.find((item) => item.status === 'online') || nodes[0];
-          this.rollbackNodeGuid = node.guid || '';
-        }
-      },
-    });
+    this.nodeService
+      .list({ page: 1, size: 100, keyword: '', status: '', enabled: 'true', desc: 'createTime' })
+      .subscribe({
+        next: (result) => {
+          const nodes = result.data || [];
+          this.nodes.set(nodes);
+          if (!this.rollbackNodeGuid && nodes.length) {
+            const node = nodes.find((item) => item.status === 'online') || nodes[0];
+            this.rollbackNodeGuid = node.guid || '';
+          }
+        },
+      });
   }
 
   private countText(value: number): string {

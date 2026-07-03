@@ -40,7 +40,9 @@ export class ConfigPreviewComponent implements OnInit {
     this.configService.render(this.model).subscribe({
       next: (result) => {
         this.result.set(result);
-        this.message.success(result.versionGuid ? `配置已生成并保存为 v${result.versionNo}` : '配置已生成');
+        this.message.success(
+          result.versionGuid ? `配置已生成并保存为 v${result.versionNo}` : '配置已生成',
+        );
       },
       complete: () => this.rendering.set(false),
       error: () => this.rendering.set(false),

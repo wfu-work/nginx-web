@@ -135,7 +135,9 @@ export class ConfigService {
   }
 
   versions(query: ConfigQuery): Observable<PageResult<ConfigVersion>> {
-    return this.http.get<PageResult<ConfigVersion>>('/configs/versions/list', { params: this.params(query) });
+    return this.http.get<PageResult<ConfigVersion>>('/configs/versions/list', {
+      params: this.params(query),
+    });
   }
 
   version(id: ConfigId): Observable<ConfigVersion> {
@@ -143,7 +145,9 @@ export class ConfigService {
   }
 
   tasks(query: ConfigQuery): Observable<PageResult<PublishTask>> {
-    return this.http.get<PageResult<PublishTask>>('/configs/tasks/list', { params: this.params(query) });
+    return this.http.get<PageResult<PublishTask>>('/configs/tasks/list', {
+      params: this.params(query),
+    });
   }
 
   private params(query: Record<string, string | number | boolean | undefined>): HttpParams {

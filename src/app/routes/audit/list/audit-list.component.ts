@@ -32,7 +32,7 @@ export class AuditListComponent implements OnInit {
     content: '',
     action: '',
     status: '',
-    desc: 'createTime',
+    desc: 'create_time',
   };
 
   protected readonly page: STPage = {
@@ -85,7 +85,7 @@ export class AuditListComponent implements OnInit {
     this.query.content = '';
     this.query.action = '';
     this.query.status = '';
-    this.query.desc = 'createTime';
+    this.query.desc = 'create_time';
     this.selected.set(null);
     this.load();
   }
@@ -105,7 +105,9 @@ export class AuditListComponent implements OnInit {
     const rows = this.rows();
     const success = rows.filter((row) => row.success === true || row.status === 'success').length;
     const failed = rows.filter((row) => row.success === false || row.status === 'failed').length;
-    const publish = rows.filter((row) => row.action === 'config_publish' || row.action === 'config_rollback').length;
+    const publish = rows.filter(
+      (row) => row.action === 'config_publish' || row.action === 'config_rollback',
+    ).length;
     return [
       {
         label: '审计总数',
@@ -153,7 +155,8 @@ export class AuditListComponent implements OnInit {
   }
 
   protected statusText(row: AuditRecord): string {
-    if (row.status) return row.status === 'success' ? '成功' : row.status === 'failed' ? '失败' : row.status;
+    if (row.status)
+      return row.status === 'success' ? '成功' : row.status === 'failed' ? '失败' : row.status;
     if (row.success === true) return '成功';
     if (row.success === false) return '失败';
     return '-';

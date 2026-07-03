@@ -48,7 +48,7 @@
       <pre class="command-block"><code>{{ agentOnlineCommand }}</code></pre>
 
       <p class="method-note">
-        安装前先在后端 <code>config.yaml</code> 中配置 <code>agent.shared-token</code>。如果当前环境还没有接入下载接口，可使用下面的手动安装方式。
+        安装前先在后端 <code>config.yaml</code> 中配置 <code>agent.shared-token</code>。下载接口会优先使用已构建产物，缺失时在源码运行环境自动构建。
       </p>
 
       <div class="file-list">
@@ -70,10 +70,10 @@
 
         <div class="download-list">
           @for (item of agentDownloads; track item.platform + item.arch) {
-            <div>
+            <a [href]="agentDownloadHref(item)" download>
               <i nz-icon nzType="download"></i>
-              <strong>{{ item.platform }} {{ item.arch }}</strong>
-            </div>
+              <strong>{{ item.label }}</strong>
+            </a>
           }
         </div>
       </article>

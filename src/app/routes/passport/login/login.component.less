@@ -50,6 +50,129 @@
 
 [data-theme='dark'] {
   :host ::ng-deep {
+    h3 {
+      color: rgb(244 250 246 / 96%);
+      letter-spacing: 0;
+    }
+
+    .ant-alert-error {
+      border-color: rgb(255 120 117 / 28%);
+      color: rgb(255 219 217 / 92%);
+      background: rgb(77 22 21 / 62%);
+    }
+
+    .ant-alert-error .ant-alert-icon,
+    .ant-form-item-explain-error {
+      color: #ffaaa5;
+    }
+
+    .ant-input-affix-wrapper {
+      min-height: 46px;
+      border-color: rgb(178 220 181 / 18%);
+      border-radius: 6px;
+      color: rgb(238 248 242 / 94%);
+      background: rgb(5 14 13 / 68%);
+      box-shadow:
+        0 1px 0 rgb(255 255 255 / 7%) inset,
+        0 10px 26px rgb(0 0 0 / 12%);
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s,
+        background 0.2s;
+    }
+
+    .ant-input-affix-wrapper:hover,
+    .ant-input-affix-wrapper-focused {
+      border-color: rgb(var(--nm-primary-rgb) / 70%);
+      background: rgb(9 23 20 / 86%);
+      box-shadow:
+        0 0 0 3px rgb(var(--nm-primary-rgb) / 16%),
+        0 16px 32px rgb(0 0 0 / 18%);
+    }
+
+    .ant-input-affix-wrapper .ant-input {
+      color: rgb(238 248 242 / 96%);
+      background: transparent;
+      caret-color: rgb(165 201 63);
+    }
+
+    .ant-input-affix-wrapper .ant-input::placeholder {
+      color: rgb(185 204 195 / 42%);
+    }
+
+    .ant-input-prefix,
+    .ant-input-suffix {
+      color: rgb(199 220 209 / 68%);
+    }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+      box-shadow: 0 0 0 1000px rgb(9 23 20) inset;
+      caret-color: rgb(165 201 63);
+      transition: background-color 9999s ease-out;
+      -webkit-text-fill-color: rgb(238 248 242 / 96%);
+    }
+
+    .ant-checkbox-wrapper {
+      color: rgb(222 236 228 / 86%);
+    }
+
+    .ant-checkbox-inner {
+      border-color: rgb(178 220 181 / 32%);
+      border-radius: 4px;
+      background: rgb(5 14 13 / 76%);
+    }
+
+    .ant-checkbox-wrapper:hover .ant-checkbox-inner,
+    .ant-checkbox:hover .ant-checkbox-inner,
+    .ant-checkbox-input:focus + .ant-checkbox-inner {
+      border-color: rgb(var(--nm-primary-rgb) / 78%);
+    }
+
+    .ant-checkbox-checked .ant-checkbox-inner {
+      border-color: var(--nm-primary);
+      background: var(--nm-primary);
+    }
+
+    .ant-checkbox-checked::after {
+      border-color: rgb(var(--nm-primary-rgb) / 58%);
+    }
+
+    .ant-btn-primary:not(.ant-btn-dangerous) {
+      height: 48px;
+      border-color: rgb(86 160 68) !important;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff !important;
+      background:
+        linear-gradient(135deg, rgb(8 98 58) 0%, rgb(48 143 68) 54%, rgb(105 181 46) 100%) !important;
+      box-shadow:
+        0 16px 34px rgb(48 143 68 / 30%),
+        0 1px 0 rgb(255 255 255 / 22%) inset !important;
+
+      &:hover,
+      &:focus {
+        border-color: rgb(120 202 75) !important;
+        background:
+          linear-gradient(135deg, rgb(12 116 68) 0%, rgb(58 163 76) 54%, rgb(132 205 64) 100%) !important;
+        box-shadow:
+          0 20px 38px rgb(82 176 62 / 34%),
+          0 1px 0 rgb(255 255 255 / 26%) inset !important;
+      }
+
+      &:active {
+        border-color: rgb(8 98 58) !important;
+        background:
+          linear-gradient(135deg, rgb(6 72 48) 0%, rgb(22 109 59) 62%, rgb(70 143 42) 100%) !important;
+      }
+    }
+
+    .ant-btn-primary.ant-btn-loading::before {
+      border-radius: 6px;
+    }
+
     .icon {
       color: rgb(255 255 255 / 20%);
 

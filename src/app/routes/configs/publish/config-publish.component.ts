@@ -169,8 +169,20 @@ export class ConfigPublishComponent implements OnInit {
     this.loading.set(true);
     forkJoin({
       sites: this.siteService.list({ page: 1, size: 100, content: '' }),
-      nodes: this.nodeService.list({ page: 1, size: 100, keyword: '', status: '', enabled: 'true', desc: 'createTime' }),
-      versions: this.configService.versions({ page: 1, size: 100, content: '', desc: 'createTime' }),
+      nodes: this.nodeService.list({
+        page: 1,
+        size: 100,
+        keyword: '',
+        status: '',
+        enabled: 'true',
+        desc: 'createTime',
+      }),
+      versions: this.configService.versions({
+        page: 1,
+        size: 100,
+        content: '',
+        desc: 'createTime',
+      }),
     }).subscribe({
       next: ({ sites, nodes, versions }) => {
         this.sites.set(sites.data || []);

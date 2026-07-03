@@ -29,7 +29,7 @@ export class ConfigTasksComponent implements OnInit {
     page: 1,
     size: 20,
     content: '',
-    desc: 'createTime',
+    desc: 'create_time',
   };
 
   protected readonly page: STPage = {
@@ -77,7 +77,7 @@ export class ConfigTasksComponent implements OnInit {
   protected reset(): void {
     this.query.page = 1;
     this.query.content = '';
-    this.query.desc = 'createTime';
+    this.query.desc = 'create_time';
     this.load();
   }
 

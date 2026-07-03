@@ -141,19 +141,19 @@
 
 .method-head h3 {
   margin: 0;
-  color: #1d2b3f;
   font-size: 18px;
   font-weight: 800;
   line-height: 1.4;
+  color: #1d2b3f;
 }
 
 .method-head p,
 .method-note {
   margin: 8px 0 0;
-  color: #667385;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.7;
+  color: #667385;
 }
 
 .method-head > code {
@@ -161,10 +161,10 @@
   padding: 4px 10px;
   border: 1px solid rgb(var(--nm-primary-rgb) / 24%);
   border-radius: 4px;
-  color: var(--nm-primary);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
   font-weight: 800;
+  color: var(--nm-primary);
   background: rgb(var(--nm-primary-rgb) / 8%);
 }
 
@@ -181,12 +181,12 @@
   padding: 16px 18px;
   border: 1px solid #d8e8df;
   border-radius: 8px;
-  color: #203045;
   font-size: 13px;
   font-weight: 700;
   line-height: 1.75;
+  color: #203045;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
-  word-break: break-word;
   background: #eef7f2;
 }
 
@@ -210,10 +210,10 @@
 .method-note code {
   padding: 4px 8px;
   border-radius: 6px;
-  color: #203045;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   font-weight: 800;
+  color: #203045;
   background: #eaf4ef;
 }
 
@@ -222,7 +222,7 @@
   gap: 12px;
 }
 
-.download-list > div {
+.download-list > a {
   display: flex;
   gap: 12px;
   align-items: center;
@@ -230,7 +230,18 @@
   padding: 12px 14px;
   border: 1px solid #dfe9e5;
   border-radius: 8px;
+  text-decoration: none;
   background: #fff;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+
+.download-list > a:hover {
+  transform: translateY(-1px);
+  border-color: rgb(var(--nm-primary-rgb) / 36%);
+  box-shadow: 0 10px 24px rgb(var(--nm-primary-rgb) / 12%);
 }
 
 .download-list i {
@@ -238,9 +249,9 @@
 }
 
 .download-list strong {
-  color: #203045;
   font-size: 15px;
   font-weight: 800;
+  color: #203045;
 }
 
 .flag-list span {
@@ -250,9 +261,9 @@
   max-width: 100%;
   padding: 5px 8px;
   border-radius: 6px;
-  color: #39506b;
   font-size: 12px;
   font-weight: 700;
+  color: #39506b;
   background: #eef6f1;
 }
 

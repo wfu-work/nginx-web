@@ -89,14 +89,26 @@ import { HeaderMessage } from './message';
       }
 
       :host-context(.nm-theme-dark) .header-container {
+        border-color: rgb(148 163 184 / 12%);
         color: rgb(226 232 240 / 88%);
+        background:
+          linear-gradient(90deg, rgb(18 31 74 / 62%) 0%, rgb(8 31 40 / 56%) 100%),
+          rgb(8 15 29 / 56%);
+        box-shadow:
+          0 1px 0 rgb(148 163 184 / 10%),
+          0 18px 42px rgb(37 99 235 / 8%),
+          inset 0 1px 0 rgb(255 255 255 / 5%);
+        backdrop-filter: blur(18px);
       }
 
       :host-context(.nm-theme-dark) .header-container-scrolled {
-        border-color: rgb(148 163 184 / 14%);
-        background: rgb(15 23 42 / 82%);
+        border-color: rgb(148 163 184 / 18%);
+        background:
+          linear-gradient(90deg, rgb(18 31 74 / 78%) 0%, rgb(8 31 40 / 72%) 100%),
+          rgb(8 15 29 / 76%);
         box-shadow:
-          0 14px 34px rgb(0 0 0 / 26%),
+          0 1px 0 rgb(148 163 184 / 12%),
+          0 18px 42px rgb(37 99 235 / 10%),
           inset 0 1px 0 rgb(255 255 255 / 6%);
       }
 
@@ -131,6 +143,17 @@ import { HeaderMessage } from './message';
         transform: translateY(-1px);
         color: var(--nm-primary-active);
         background: rgb(var(--nm-primary-rgb) / 14%);
+      }
+
+      :host-context(.nm-theme-dark) .trigger {
+        border-color: rgb(var(--nm-primary-rgb) / 22%);
+        color: #dbeafe;
+        background: rgb(var(--nm-primary-rgb) / 14%);
+      }
+
+      :host-context(.nm-theme-dark) .trigger:hover {
+        color: #fff;
+        background: rgb(var(--nm-primary-rgb) / 22%);
       }
 
       .title {

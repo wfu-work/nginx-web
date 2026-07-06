@@ -15,6 +15,11 @@
     radial-gradient(circle at 84% 18%, rgb(220 238 255 / 64%), transparent 34%),
     linear-gradient(116deg, #edf7ff 0%, #f7fbff 46%, #e8f4ff 100%);
 
+  nz-layout,
+  .ant-layout {
+    background: transparent;
+  }
+
   nz-sider {
     position: fixed;
     top: 14px;
@@ -63,6 +68,7 @@
     width: 100%;
     margin-top: 0;
     padding-top: var(--basic-header-offset);
+    background: transparent;
   }
 
   nz-footer {
@@ -111,8 +117,8 @@
     top: 0;
     bottom: 0;
     left: 0;
-    border-width: 0 1px 0 0;
     border-color: rgb(var(--nm-primary-rgb) / 10%);
+    border-width: 0 1px 0 0;
     border-radius: 0;
     box-shadow: inset -1px 0 0 rgb(255 255 255 / 74%);
   }
@@ -158,9 +164,15 @@
 
 :host-context(.nm-theme-dark) ::ng-deep {
   background:
-    radial-gradient(circle at 24% 18%, rgb(var(--nm-primary-rgb) / 18%), transparent 30%),
-    radial-gradient(circle at 86% 14%, rgb(30 64 175 / 18%), transparent 34%),
-    linear-gradient(120deg, #08111d 0%, #0d1726 52%, #07101a 100%);
+    radial-gradient(circle at 18% -8%, rgb(59 73 223 / 22%), transparent 36%),
+    radial-gradient(circle at 78% -4%, rgb(20 184 166 / 16%), transparent 38%),
+    radial-gradient(circle at 52% 18%, rgb(37 99 235 / 9%), transparent 42%),
+    linear-gradient(115deg, #101947 0%, #071927 50%, #07121f 100%);
+
+  nz-layout,
+  .ant-layout {
+    background: transparent;
+  }
 
   nz-sider {
     border-color: rgb(148 163 184 / 12%);
@@ -174,6 +186,7 @@
 
   nz-content {
     color: rgb(226 232 240 / 88%);
+    background: transparent;
   }
 
   nz-footer {
@@ -191,6 +204,7 @@
   }
 }
 
+/* stylelint-disable selector-type-no-unknown -- basic-menus is an Angular component selector. */
 :host-context(.nm-menu-grouped) ::ng-deep basic-menus {
   .ant-menu-inline .ant-menu-submenu {
     margin: 0 0 10px;
@@ -204,10 +218,10 @@
     height: 36px;
     margin: 0 8px 2px;
     padding-inline: 14px !important;
-    color: #394b60;
     font-size: 13px;
     font-weight: 850;
     line-height: 36px;
+    color: #394b60;
     background: transparent !important;
     box-shadow: none !important;
   }
@@ -284,3 +298,4 @@
     background: transparent;
   }
 }
+/* stylelint-enable selector-type-no-unknown */

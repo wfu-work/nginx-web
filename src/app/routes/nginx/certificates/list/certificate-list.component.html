@@ -32,7 +32,7 @@
         <h2>证书记录</h2>
         <p>按证书名称、域名或签发者筛选证书，并检查有效期状态。</p>
       </div>
-      <span class="page-size-pill">{{ query.size }} 条/页</span>
+      <span class="page-size-pill">共 {{ total() }} 条</span>
     </div>
 
     <form nz-form class="filter-bar" (ngSubmit)="search()">

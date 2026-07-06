@@ -370,6 +370,122 @@
   color: var(--nm-primary);
 }
 
+:host-context(.nm-theme-dark) .guide-step,
+:host-context(.nm-theme-dark) .guide-card,
+:host-context(.nm-theme-dark) .install-panel {
+  border-color: rgb(148 163 184 / 16%);
+  background:
+    linear-gradient(180deg, rgb(15 23 42 / 88%) 0%, rgb(8 15 29 / 86%) 100%),
+    rgb(15 23 42 / 86%);
+  box-shadow:
+    0 18px 38px rgb(0 0 0 / 18%),
+    inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+
+:host-context(.nm-theme-dark) .guide-step:hover,
+:host-context(.nm-theme-dark) .download-list > a:hover,
+:host-context(.nm-theme-dark) .quick-card:hover {
+  border-color: rgb(var(--nm-primary-rgb) / 34%);
+  box-shadow:
+    0 18px 36px rgb(0 0 0 / 24%),
+    0 0 0 1px rgb(var(--nm-primary-rgb) / 10%) inset;
+}
+
+:host-context(.nm-theme-dark) .step-index {
+  background:
+    linear-gradient(135deg, rgb(var(--nm-primary-rgb) / 96%), rgb(59 130 246 / 92%)),
+    var(--nm-primary);
+  box-shadow: 0 12px 26px rgb(var(--nm-primary-rgb) / 20%);
+}
+
+:host-context(.nm-theme-dark) .step-body h2,
+:host-context(.nm-theme-dark) .guide-card h2,
+:host-context(.nm-theme-dark) .section-heading h2,
+:host-context(.nm-theme-dark) .method-head h3,
+:host-context(.nm-theme-dark) .quick-card strong,
+:host-context(.nm-theme-dark) .setting-grid strong,
+:host-context(.nm-theme-dark) .download-list strong {
+  color: rgb(248 250 252 / 94%);
+}
+
+:host-context(.nm-theme-dark) .step-body p,
+:host-context(.nm-theme-dark) .section-heading span,
+:host-context(.nm-theme-dark) .method-head p,
+:host-context(.nm-theme-dark) .method-note,
+:host-context(.nm-theme-dark) .connect-grid span,
+:host-context(.nm-theme-dark) .quick-card,
+:host-context(.nm-theme-dark) .check-list li {
+  color: rgb(203 213 225 / 76%);
+}
+
+:host-context(.nm-theme-dark) .field-list code,
+:host-context(.nm-theme-dark) .connect-grid code,
+:host-context(.nm-theme-dark) .file-list code,
+:host-context(.nm-theme-dark) .flag-list code,
+:host-context(.nm-theme-dark) .method-note code {
+  border: 1px solid rgb(148 163 184 / 14%);
+  color: rgb(226 232 240 / 88%);
+  background: rgb(15 23 42 / 72%);
+}
+
+:host-context(.nm-theme-dark) .install-method {
+  border-color: rgb(148 163 184 / 14%);
+  background: rgb(8 15 29 / 48%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+}
+
+:host-context(.nm-theme-dark) .install-method-primary {
+  border-color: rgb(var(--nm-primary-rgb) / 22%);
+  background:
+    radial-gradient(circle at 90% 0%, rgb(var(--nm-primary-rgb) / 12%), transparent 38%),
+    linear-gradient(180deg, rgb(15 23 42 / 82%) 0%, rgb(8 15 29 / 72%) 100%);
+}
+
+:host-context(.nm-theme-dark) .method-head > code {
+  border-color: rgb(var(--nm-primary-rgb) / 30%);
+  color: rgb(219 234 254 / 92%);
+  background: rgb(var(--nm-primary-rgb) / 16%);
+}
+
+:host-context(.nm-theme-dark) .install-method:nth-child(2) .method-head > code {
+  border-color: rgb(245 158 11 / 28%);
+  color: #fbbf24;
+  background: rgb(245 158 11 / 12%);
+}
+
+:host-context(.nm-theme-dark) .command-block {
+  border-color: rgb(148 163 184 / 16%);
+  color: rgb(226 232 240 / 92%);
+  background:
+    linear-gradient(180deg, rgb(2 6 23 / 78%) 0%, rgb(8 15 29 / 88%) 100%),
+    rgb(2 6 23 / 82%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+}
+
+:host-context(.nm-theme-dark) .download-list > a,
+:host-context(.nm-theme-dark) .connect-grid > div,
+:host-context(.nm-theme-dark) .quick-card,
+:host-context(.nm-theme-dark) .setting-grid > div {
+  border: 1px solid rgb(148 163 184 / 14%);
+  background: rgb(8 15 29 / 52%);
+}
+
+:host-context(.nm-theme-dark) .download-list > a {
+  color: inherit;
+}
+
+:host-context(.nm-theme-dark) .flag-list span {
+  border: 1px solid rgb(148 163 184 / 12%);
+  color: rgb(203 213 225 / 78%);
+  background: rgb(15 23 42 / 66%);
+}
+
+:host-context(.nm-theme-dark) .check-list i,
+:host-context(.nm-theme-dark) .quick-card i,
+:host-context(.nm-theme-dark) .download-list i {
+  color: #7aa2ff;
+}
+
 @media (max-width: 1199px) {
   .guide-flow,
   .connect-grid,

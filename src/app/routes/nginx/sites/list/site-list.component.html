@@ -32,7 +32,7 @@
         <h2>站点记录</h2>
         <p>按站点名称或域名查找 server 配置，并进入详情维护 Location。</p>
       </div>
-      <span class="page-size-pill">{{ query.size }} 条/页</span>
+      <span class="page-size-pill">共 {{ total() }} 条</span>
     </div>
 
     <form nz-form class="filter-bar" (ngSubmit)="search()">

@@ -1,43 +1,90 @@
 <section class="config-page">
   <div class="page-head">
-    <title-label
-      title="配置预览"
-      description="从站点、上游和证书数据生成最终 Nginx 配置文本。"
-    />
+    <title-label title="配置预览" description="生成可检查的 Nginx 配置草稿，再进入校验发布。" />
 
     <div class="head-actions">
       <button nz-button type="button" [nzLoading]="loading()" (click)="refresh()">
         <span nz-icon nzType="reload"></span>
         刷新
       </button>
+      <button nz-button type="button" routerLink="/configs/versions">
+        <span nz-icon nzType="history"></span>
+        版本历史
+      </button>
       <button nz-button nzType="primary" type="button" routerLink="/configs/publish">
         <span nz-icon nzType="deployment-unit"></span>
-        去发布
+        校验发布
       </button>
     </div>
   </div>
 
-  <div class="split-grid">
-    <form nz-form class="form-panel" (ngSubmit)="render()">
+  <section class="preview-hero">
+    <div class="workflow-strip">
+      @for (item of workflowItems(); track item.label) {
+        <article class="workflow-item" [class.is-done]="item.done" [class.is-active]="item.active">
+          <span nz-icon [nzType]="item.icon"></span>
+          <strong>{{ item.label }}</strong>
+        </article>
+      }
+    </div>
+    <div class="scope-summary">
+      <article>
+        <span nz-icon nzType="partition"></span>
+        <div>
+          <em>生成范围</em>
+          <strong>{{ selectedSiteText() }}</strong>
+          <small>{{ selectedScopeHint() }}</small>
+        </div>
+      </article>
+      <article>
+        <span nz-icon nzType="save"></span>
+        <div>
+          <em>版本策略</em>
+          <strong>{{ saveModeText() }}</strong>
+          <small>{{ lastGeneratedText() }}</small>
+        </div>
+      </article>
+      <article>
+        <span nz-icon nzType="safety-certificate"></span>
+        <div>
+          <em>发布前检查</em>
+          <strong>{{ result()?.config ? '可进入校验' : '等待预览' }}</strong>
+          <small>nginx -t 校验后再 reload</small>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <div class="preview-layout">
+    <form nz-form class="form-panel preview-form" (ngSubmit)="render()">
       <div class="panel-head">
         <div>
           <h2>生成范围</h2>
-          <p>选择单个站点或全部启用站点，生成发布前可检查的完整配置。</p>
+          <p>当前会按站点、Location、上游和证书数据组装配置。</p>
         </div>
+        <span nz-icon nzType="control"></span>
       </div>
 
-      <se-container class="section-se" [col]="2" [labelWidth]="112" [nzLayout]="'horizontal'">
+      <se-container class="section-se" [col]="1" [labelWidth]="92" [nzLayout]="'vertical'">
         <se label="站点">
-          <nz-select name="siteGuid" nzAllowClear nzPlaceHolder="全部启用站点" [(ngModel)]="model.siteGuid">
+          <nz-select
+            name="siteGuid"
+            nzAllowClear
+            nzPlaceHolder="全部启用站点"
+            [(ngModel)]="model.siteGuid"
+          >
             <nz-option nzValue="" nzLabel="全部启用站点" />
             @for (site of sites(); track site.guid || site.name) {
-              <nz-option [nzValue]="site.guid || ''" [nzLabel]="site.name + ' / ' + site.serverName" />
+              <nz-option
+                [nzValue]="site.guid || ''"
+                [nzLabel]="site.name + ' / ' + site.serverName"
+              />
             }
           </nz-select>
         </se>
 
         <se label="保存版本">
-          <label nz-checkbox name="save" [(ngModel)]="model.save">生成时保存版本</label>
+          <label nz-checkbox name="save" [(ngModel)]="model.save">保存为版本记录</label>
         </se>
 
         <se label="原因" [col]="1">
@@ -50,16 +97,65 @@
           <span nz-icon nzType="file-search"></span>
           生成预览
         </button>
+        <button nz-button type="button" routerLink="/nginx/sites">
+          <span nz-icon nzType="partition"></span>
+          维护站点
+        </button>
       </div>
     </form>
 
-    <section class="result-panel">
-      <h2>预览结果</h2>
-      <p>{{ selectedSiteText() }}</p>
-      @if (result()?.versionGuid) {
-        <p>已保存版本：v{{ result()?.versionNo }}</p>
+    <section class="result-panel preview-result">
+      <div class="result-head">
+        <div>
+          <h2>预览结果</h2>
+          <p>{{ selectedSiteText() }} · {{ saveModeText() }}</p>
+        </div>
+        <div class="result-actions">
+          <button nz-button type="button" [disabled]="!result()?.config" (click)="copyConfig()">
+            <span nz-icon nzType="copy"></span>
+            复制
+          </button>
+          <button
+            nz-button
+            nzType="primary"
+            type="button"
+            routerLink="/configs/publish"
+            [disabled]="!result()?.config"
+          >
+            <span nz-icon nzType="check-circle"></span>
+            去校验
+          </button>
+        </div>
+      </div>
+
+      <div class="preview-stats">
+        @for (item of previewStats(); track item.label) {
+          <article>
+            <span nz-icon [nzType]="item.icon"></span>
+            <div>
+              <em>{{ item.label }}</em>
+              <strong>{{ item.value }}</strong>
+            </div>
+          </article>
+        }
+      </div>
+
+      @if (result()?.config) {
+        <div class="code-shell">
+          <div class="code-toolbar">
+            <span nz-icon nzType="code"></span>
+            <strong>nginx.conf</strong>
+            <em>{{ lastGeneratedText() }}</em>
+          </div>
+          <pre class="code-block">{{ configText() }}</pre>
+        </div>
+      } @else {
+        <div class="empty-preview">
+          <span nz-icon nzType="file-search"></span>
+          <strong>暂无预览内容</strong>
+          <p>选择生成范围后生成配置草稿。</p>
+        </div>
       }
-      <pre class="code-block">{{ configText() }}</pre>
     </section>
   </div>
 </section>

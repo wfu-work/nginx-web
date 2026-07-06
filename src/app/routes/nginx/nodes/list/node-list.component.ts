@@ -99,7 +99,7 @@ export class NodeListComponent implements OnInit {
     this.query.keyword = '';
     this.query.status = '';
     this.query.enabled = '';
-    this.query.desc = 'createTime';
+    this.query.desc = 'create_time';
     this.load();
   }
 

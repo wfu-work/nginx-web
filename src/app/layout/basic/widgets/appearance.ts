@@ -54,7 +54,10 @@ interface MenuOption {
     </button>
 
     <ng-template #appearanceDrawerContent>
-      <section class="appearance-panel">
+      <section
+        class="appearance-panel"
+        [class.appearance-panel-dark]="appearance.resolvedTheme() === 'dark'"
+      >
         <div class="panel-hero">
           <div>
             <span>Nginx Control</span>
@@ -756,73 +759,108 @@ interface MenuOption {
         -webkit-line-clamp: 2;
       }
 
-      :host-context(.nm-theme-dark) .appearance-panel {
+      .appearance-panel-dark {
         color: rgb(241 245 249 / 92%);
       }
 
-      :host-context(.nm-theme-dark) .panel-hero {
-        border-color: rgb(148 163 184 / 24%);
+      .appearance-panel-dark .panel-hero {
+        border-color: rgb(148 163 184 / 18%);
         background:
           radial-gradient(
-            circle at 106% -14%,
-            rgb(var(--nm-primary-rgb) / 18%) 0 108px,
-            transparent 109px
+            circle at 96% 8%,
+            rgb(var(--nm-primary-rgb) / 18%) 0 92px,
+            transparent 93px
           ),
-          linear-gradient(135deg, rgb(20 35 58 / 98%), rgb(8 15 29 / 98%));
+          radial-gradient(circle at 12% 8%, rgb(59 130 246 / 14%), transparent 44%),
+          linear-gradient(135deg, rgb(15 23 42 / 96%) 0%, rgb(8 15 29 / 98%) 100%);
         box-shadow:
-          0 20px 44px rgb(0 0 0 / 28%),
+          0 20px 44px rgb(0 0 0 / 30%),
           inset 0 1px 0 rgb(255 255 255 / 6%);
       }
 
-      :host-context(.nm-theme-dark) .panel-hero::after {
-        background: radial-gradient(
-          circle,
-          rgb(var(--nm-primary-rgb) / 16%) 0 34%,
-          transparent 66%
-        );
+      .appearance-panel-dark .panel-hero::after {
+        background: radial-gradient(circle, rgb(59 130 246 / 16%) 0 34%, transparent 66%);
       }
 
-      :host-context(.nm-theme-dark) .panel-hero h2,
-      :host-context(.nm-theme-dark) .section-title h3,
-      :host-context(.nm-theme-dark) .preview-card strong,
-      :host-context(.nm-theme-dark) .color-name {
-        color: rgb(241 245 249 / 92%);
+      .appearance-panel-dark .panel-hero > div > span {
+        color: #8fb4ff;
       }
 
-      :host-context(.nm-theme-dark) .panel-hero p,
-      :host-context(.nm-theme-dark) .card-desc {
-        color: rgb(203 213 225 / 70%);
+      .appearance-panel-dark .panel-hero h2,
+      .appearance-panel-dark .section-title h3,
+      .appearance-panel-dark .preview-card strong,
+      .appearance-panel-dark .color-name {
+        color: rgb(248 250 252 / 94%);
       }
 
-      :host-context(.nm-theme-dark) .reset-button {
-        border-color: rgb(var(--nm-primary-rgb) / 32%);
-        color: #d9f99d;
-        background: rgb(var(--nm-primary-rgb) / 16%);
+      .appearance-panel-dark .panel-hero p,
+      .appearance-panel-dark .card-desc {
+        color: rgb(203 213 225 / 74%);
+      }
+
+      .appearance-panel-dark .reset-button {
+        border-color: rgb(var(--nm-primary-rgb) / 36%);
+        color: #fff;
+        background: rgb(var(--nm-primary-rgb) / 20%);
         box-shadow: 0 12px 28px rgb(0 0 0 / 22%);
       }
 
-      :host-context(.nm-theme-dark) .color-option,
-      :host-context(.nm-theme-dark) .preview-card {
-        border-color: rgb(148 163 184 / 14%);
+      .appearance-panel-dark .reset-button:hover {
+        border-color: rgb(var(--nm-primary-rgb) / 58%);
+        background: rgb(var(--nm-primary-rgb) / 28%);
+      }
+
+      .appearance-panel-dark .color-option,
+      .appearance-panel-dark .preview-card {
+        border-color: rgb(148 163 184 / 16%);
         color: rgb(241 245 249 / 88%);
-        background: rgb(15 23 42 / 72%);
+        background:
+          linear-gradient(180deg, rgb(15 23 42 / 92%) 0%, rgb(8 15 29 / 90%) 100%),
+          rgb(15 23 42 / 92%);
+        box-shadow:
+          inset 0 1px 0 rgb(255 255 255 / 4%),
+          0 12px 28px rgb(0 0 0 / 18%);
       }
 
-      :host-context(.nm-theme-dark) .color-option:hover,
-      :host-context(.nm-theme-dark) .color-option-active,
-      :host-context(.nm-theme-dark) .preview-card:hover,
-      :host-context(.nm-theme-dark) .preview-card-active {
+      .appearance-panel-dark .color-option:hover,
+      .appearance-panel-dark .color-option-active,
+      .appearance-panel-dark .preview-card:hover,
+      .appearance-panel-dark .preview-card-active {
         border-color: rgb(var(--nm-primary-rgb) / 72%);
-        box-shadow: 0 18px 34px rgb(0 0 0 / 28%);
+        background:
+          linear-gradient(180deg, rgb(30 41 59 / 94%) 0%, rgb(15 23 42 / 94%) 100%),
+          rgb(15 23 42 / 94%);
+        box-shadow:
+          0 18px 36px rgb(0 0 0 / 30%),
+          0 0 0 1px rgb(var(--nm-primary-rgb) / 18%) inset;
       }
 
-      :host-context(.nm-theme-dark) .theme-preview,
-      :host-context(.nm-theme-dark) .sider-preview,
-      :host-context(.nm-theme-dark) .menu-preview {
-        background: rgb(30 41 59 / 74%);
+      .appearance-panel-dark .color-preview {
+        border-color: rgb(15 23 42 / 76%);
+        box-shadow:
+          inset 0 0 0 1px rgb(255 255 255 / 18%),
+          0 14px 24px rgb(0 0 0 / 26%);
       }
 
-      :host-context(.nm-theme-dark) .font-sample {
+      .appearance-panel-dark .color-preview i {
+        border-color: rgb(248 250 252 / 92%);
+      }
+
+      .appearance-panel-dark .theme-preview,
+      .appearance-panel-dark .sider-preview,
+      .appearance-panel-dark .menu-preview {
+        background: rgb(15 23 42 / 86%);
+      }
+
+      .appearance-panel-dark .theme-preview-light {
+        background: #e5e7eb;
+      }
+
+      .appearance-panel-dark .theme-preview-system {
+        background: linear-gradient(90deg, #dbe7e4 0 50%, #132033 50% 100%);
+      }
+
+      .appearance-panel-dark .font-sample {
         color: rgb(248 250 252 / 94%);
       }
 

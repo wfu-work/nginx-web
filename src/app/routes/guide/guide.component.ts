@@ -125,11 +125,11 @@ sudo systemctl status nginx-agent`;
       fields: ['publish', 'rollback', 'backupPath', 'operationGuid'],
     },
     {
-      title: '观测与审计',
-      desc: '工作台查看进程、stub_status 和操作记录；日志页可 tail 文件、同步结构化日志、查看审计。',
-      path: '/nginx/logs',
-      action: '查看日志',
-      fields: ['access.log', 'error.log', 'audit', 'MetricSample'],
+      title: '审计追踪',
+      desc: '工作台查看运行状态、进程和最近操作；审计记录用于追踪发布、回滚和高危运行操作。',
+      path: '/audit',
+      action: '查看审计',
+      fields: ['operation', 'publish', 'rollback', 'reason'],
     },
   ];
 

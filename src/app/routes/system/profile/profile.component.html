@@ -1,0 +1,142 @@
+<section class="profile-page">
+  <div class="page-head">
+    <title-label title="个人中心" description="查看账号信息、角色权限，并维护当前登录密码。" />
+    <a nz-button routerLink="/nginx/settings">
+      <i nz-icon nzType="setting"></i>
+      运行设置
+    </a>
+  </div>
+
+  <section class="profile-overview">
+    <article class="identity-panel">
+      <div class="identity-main">
+        <nz-avatar [nzSrc]="avatar" [nzSize]="72" nzShape="circle" />
+        <div class="identity-text">
+          <span>当前账号</span>
+          <h2>{{ displayName }}</h2>
+          <p>{{ accountName }}</p>
+        </div>
+      </div>
+      <div class="role-list">
+        @for (role of roles; track role) {
+          <span>{{ role }}</span>
+        }
+      </div>
+    </article>
+
+    <div class="summary-grid">
+      @for (item of summaryItems(); track item.label) {
+        <article class="summary-card" [class]="'summary-card tone-' + item.tone">
+          <span class="summary-icon" nz-icon [nzType]="item.icon"></span>
+          <div>
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <em>{{ item.hint }}</em>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="info-grid">
+    <article class="info-panel">
+      <div class="panel-head">
+        <div>
+          <h2>账号资料</h2>
+          <p>来自当前登录会话和前端用户设置。</p>
+        </div>
+        <span nz-icon nzType="idcard"></span>
+      </div>
+      <div class="info-list">
+        @for (item of accountInfo(); track item.label) {
+          <div class="info-row">
+            <span class="row-icon" nz-icon [nzType]="item.icon"></span>
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="info-panel">
+      <div class="panel-head">
+        <div>
+          <h2>安全信息</h2>
+          <p>用于判断当前登录凭证和控制台权限状态。</p>
+        </div>
+        <span nz-icon nzType="safety-certificate"></span>
+      </div>
+      <div class="info-list">
+        @for (item of securityInfo(); track item.label) {
+          <div class="info-row">
+            <span class="row-icon" nz-icon [nzType]="item.icon"></span>
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="info-panel password-panel">
+      <div class="panel-head">
+        <div>
+          <h2>修改密码</h2>
+          <p>提交时会校验原密码，并使用加密通道更新登录凭证。</p>
+        </div>
+        <span nz-icon nzType="lock"></span>
+      </div>
+      <form nz-form [formGroup]="passwordForm" class="password-form" (ngSubmit)="changePassword()">
+        <label>
+          <span>原密码</span>
+          <app-password-input
+            formControlName="oldPassword"
+            placeholder="请输入当前密码"
+            autocomplete="current-password"
+            size="default"
+          />
+        </label>
+        <label>
+          <span>新密码</span>
+          <app-password-input
+            formControlName="newPassword"
+            placeholder="至少 8 位新密码"
+            autocomplete="new-password"
+            size="default"
+          />
+          @if (
+            passwordForm.controls.newPassword.dirty &&
+            passwordForm.controls.newPassword.hasError('minlength')
+          ) {
+            <em>新密码至少 8 位</em>
+          }
+        </label>
+        <label>
+          <span>确认新密码</span>
+          <app-password-input
+            formControlName="confirmPassword"
+            placeholder="再次输入新密码"
+            autocomplete="new-password"
+            size="default"
+          />
+          @if (passwordForm.dirty && passwordForm.hasError('passwordMismatch')) {
+            <em>两次输入的新密码不一致</em>
+          }
+        </label>
+        <div class="password-actions">
+          <button
+            nz-button
+            type="button"
+            (click)="passwordForm.reset()"
+            [disabled]="passwordLoading"
+          >
+            重置
+          </button>
+          <button nz-button nzType="primary" htmlType="submit" [nzLoading]="passwordLoading">
+            <span nz-icon nzType="save"></span>
+            保存新密码
+          </button>
+        </div>
+      </form>
+    </article>
+  </section>
+</section>

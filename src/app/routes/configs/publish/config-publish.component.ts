@@ -175,13 +175,13 @@ export class ConfigPublishComponent implements OnInit {
         keyword: '',
         status: '',
         enabled: 'true',
-        desc: 'createTime',
+        desc: 'create_time',
       }),
       versions: this.configService.versions({
         page: 1,
         size: 100,
         content: '',
-        desc: 'createTime',
+        desc: 'create_time',
       }),
     }).subscribe({
       next: ({ sites, nodes, versions }) => {
@@ -196,9 +196,11 @@ export class ConfigPublishComponent implements OnInit {
   }
 
   private loadVersions(): void {
-    this.configService.versions({ page: 1, size: 100, content: '', desc: 'createTime' }).subscribe({
-      next: (result) => this.versions.set(result.data || []),
-    });
+    this.configService
+      .versions({ page: 1, size: 100, content: '', desc: 'create_time' })
+      .subscribe({
+        next: (result) => this.versions.set(result.data || []),
+      });
   }
 
   private selectDefaultNode(): void {

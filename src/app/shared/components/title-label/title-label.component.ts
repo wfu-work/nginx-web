@@ -88,6 +88,25 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
         letter-spacing: 0;
       }
 
+      :host-context(.nm-theme-dark) .title-label-back {
+        border-color: rgb(var(--nm-primary-rgb) / 22%);
+        color: #dbeafe;
+        background: rgb(var(--nm-primary-rgb) / 14%);
+      }
+
+      :host-context(.nm-theme-dark) .title-label-back:hover {
+        color: #fff;
+        background: rgb(var(--nm-primary-rgb) / 22%);
+      }
+
+      :host-context(.nm-theme-dark) .title-label-title {
+        color: rgb(248 250 252 / 96%);
+      }
+
+      :host-context(.nm-theme-dark) .title-label-description {
+        color: rgb(203 213 225 / 76%);
+      }
+
       @media (max-width: 767px) {
         .title-label {
           gap: 10px;

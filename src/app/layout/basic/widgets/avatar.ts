@@ -26,6 +26,10 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
     </div>
     <nz-dropdown-menu #userMenu="nzDropdownMenu">
       <div nz-menu class="width-sm">
+        <div nz-menu-item (click)="goProfile()">
+          <i nz-icon nzType="user" class="mr-sm"></i>
+          个人中心
+        </div>
         <div nz-menu-item (click)="logout()">
           <i nz-icon nzType="logout" class="mr-sm"></i>
           退出登录
@@ -41,6 +45,10 @@ export class AvatarComponent {
   protected readonly user = inject(SettingsService).user as User & { username?: string };
   private readonly router = inject(Router);
   private readonly tokenService: ITokenService = inject(DA_SERVICE_TOKEN);
+
+  protected goProfile(): void {
+    this.router.navigateByUrl('/system/profile');
+  }
 
   protected logout(): void {
     this.tokenService.clear();

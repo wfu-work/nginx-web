@@ -33,7 +33,7 @@
         <h2>任务记录</h2>
         <p>按动作、状态、原因或消息搜索发布记录，定位失败节点和目标文件。</p>
       </div>
-      <span class="page-size-pill">{{ query.size }} 条/页</span>
+      <span class="page-size-pill">共 {{ total() }} 条</span>
     </div>
 
     <form nz-form class="filter-bar" (ngSubmit)="search()">

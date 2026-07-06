@@ -1,11 +1,17 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
 import { PageResult } from '@shared/types/page';
 import { NzMessageService } from 'ng-zorro-antd/message';
-import { catchError, finalize, forkJoin, of } from 'rxjs';
+import { catchError, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 
 import {
   Certificate,
@@ -14,7 +20,6 @@ import {
   ConfigValidateResult,
   ConfigVersion,
   LocationRule,
-  LogResult,
   MetricSummary,
   NginxApiService,
   OperationResult,
@@ -24,15 +29,32 @@ import {
   Upstream,
   UpstreamServer,
 } from './nginx-api.service';
+import { NodeRecord, NodeService } from './nodes/node.service';
 
-type Section = 'dashboard' | 'sites' | 'upstreams' | 'certificates' | 'configs' | 'logs' | 'settings';
-type PlainRow = { [key: string]: unknown };
+type Section = 'dashboard' | 'sites' | 'upstreams' | 'certificates' | 'configs' | 'settings';
+type PlainRow = Record<string, unknown>;
 
 interface ConsoleNav {
   key: Section;
   title: string;
   desc: string;
   icon: string;
+}
+
+interface DashboardMetricItem {
+  label: string;
+  value: string;
+  hint: string;
+  icon: string;
+  tone: 'primary' | 'success' | 'warning' | 'plain';
+}
+
+interface DashboardResourceItem {
+  label: string;
+  value: string;
+  hint: string;
+  icon: string;
+  link: string;
 }
 
 @Component({
@@ -44,6 +66,7 @@ interface ConsoleNav {
 })
 export class NginxConsoleComponent implements OnInit {
   private readonly api = inject(NginxApiService);
+  private readonly nodeService = inject(NodeService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -53,6 +76,8 @@ export class NginxConsoleComponent implements OnInit {
   protected loading = false;
   protected summary: MetricSummary | null = null;
   protected operations: OperationResult[] = [];
+  protected nodes: NodeRecord[] = [];
+  protected selectedNodeGuid = '';
   protected sites: Site[] = [];
   protected selectedSiteLocations: LocationRule[] = [];
   protected upstreams: Upstream[] = [];
@@ -60,12 +85,7 @@ export class NginxConsoleComponent implements OnInit {
   protected certificates: Certificate[] = [];
   protected versions: PlainRow[] = [];
   protected tasks: PlainRow[] = [];
-  protected auditRows: PlainRow[] = [];
-  protected accessRecords: PlainRow[] = [];
-  protected errorRecords: PlainRow[] = [];
   protected settings: RuntimeSetting[] = [];
-  protected accessLog: LogResult | null = null;
-  protected errorLog: LogResult | null = null;
   protected renderedConfig = '';
   protected validateResult: ConfigValidateResult | null = null;
   protected publishResult: PublishResult | null = null;
@@ -77,9 +97,13 @@ export class NginxConsoleComponent implements OnInit {
     { key: 'dashboard', title: '运行总览', desc: '状态、指标和高危操作', icon: 'dashboard' },
     { key: 'sites', title: '站点', desc: '域名、目录和代理规则', icon: 'partition' },
     { key: 'upstreams', title: '上游', desc: '负载均衡和健康检查', icon: 'cluster' },
-    { key: 'certificates', title: '证书', desc: 'HTTPS 证书路径与续期', icon: 'safety-certificate' },
+    {
+      key: 'certificates',
+      title: '证书',
+      desc: 'HTTPS 证书路径与续期',
+      icon: 'safety-certificate',
+    },
     { key: 'configs', title: '发布', desc: '预览、校验、发布、回滚', icon: 'deployment-unit' },
-    { key: 'logs', title: '日志', desc: 'access/error/审计', icon: 'audit' },
     { key: 'settings', title: '设置', desc: '运行时 key-value 配置', icon: 'setting' },
   ];
 
@@ -168,8 +192,12 @@ export class NginxConsoleComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.locationForm.controls.siteGuid.valueChanges.subscribe((siteGuid) => this.loadSiteDetail(siteGuid));
-    this.upstreamServerForm.controls.upstreamGuid.valueChanges.subscribe((upstreamGuid) => this.loadUpstreamDetail(upstreamGuid));
+    this.locationForm.controls.siteGuid.valueChanges.subscribe((siteGuid) =>
+      this.loadSiteDetail(siteGuid),
+    );
+    this.upstreamServerForm.controls.upstreamGuid.valueChanges.subscribe((upstreamGuid) =>
+      this.loadUpstreamDetail(upstreamGuid),
+    );
     this.route.paramMap.subscribe((params) => {
       const section = (params.get('section') || 'dashboard') as Section;
       this.section = this.navs.some((item) => item.key === section) ? section : 'dashboard';
@@ -183,16 +211,21 @@ export class NginxConsoleComponent implements OnInit {
     if (this.section === 'upstreams') this.loadUpstreams();
     if (this.section === 'certificates') this.loadCertificates();
     if (this.section === 'configs') this.loadConfigs();
-    if (this.section === 'logs') this.loadLogs();
     if (this.section === 'settings') this.loadSettings();
   }
 
   protected runOperation(action: string, confirm = false): void {
+    const nodeGuid = this.selectedNodeGuid;
+    if (!this.canRunNodeTask()) {
+      this.message.warning('请先选择一个在线 Agent 节点');
+      return;
+    }
     this.loading = true;
     this.api
       .operation(action, {
+        nodeGuid,
         confirm,
-        reason: `frontend:${action}`,
+        reason: `frontend:${action}:${this.currentNodeTitle()}`,
       })
       .pipe(finalize(() => this.finishLoading()))
       .subscribe({
@@ -246,7 +279,9 @@ export class NginxConsoleComponent implements OnInit {
       this.message.warning('请先选择一个站点');
       return;
     }
-    const request = value.guid ? this.api.updateLocation(value.siteGuid, value) : this.api.createLocation(value.siteGuid, value);
+    const request = value.guid
+      ? this.api.updateLocation(value.siteGuid, value)
+      : this.api.createLocation(value.siteGuid, value);
     request.subscribe({
       next: () => {
         this.message.success(value.guid ? 'Location 已更新' : 'Location 已添加');
@@ -258,7 +293,10 @@ export class NginxConsoleComponent implements OnInit {
   }
 
   protected editLocation(item: LocationRule): void {
-    this.locationForm.patchValue({ ...item, siteGuid: item.siteGuid || this.siteForm.controls.guid.value });
+    this.locationForm.patchValue({
+      ...item,
+      siteGuid: item.siteGuid || this.siteForm.controls.guid.value,
+    });
   }
 
   protected deleteLocation(item: LocationRule): void {
@@ -322,7 +360,10 @@ export class NginxConsoleComponent implements OnInit {
   }
 
   protected editUpstreamServer(item: UpstreamServer): void {
-    this.upstreamServerForm.patchValue({ ...item, upstreamGuid: item.upstreamGuid || this.upstreamForm.controls.guid.value });
+    this.upstreamServerForm.patchValue({
+      ...item,
+      upstreamGuid: item.upstreamGuid || this.upstreamForm.controls.guid.value,
+    });
   }
 
   protected deleteUpstreamServer(item: UpstreamServer): void {
@@ -382,7 +423,10 @@ export class NginxConsoleComponent implements OnInit {
     this.api.renderConfig(payload).subscribe({
       next: (result: ConfigRenderResult) => {
         this.renderedConfig = result.config;
-        this.configForm.patchValue({ config: result.config, versionGuid: result.versionGuid || this.configForm.controls.versionGuid.value });
+        this.configForm.patchValue({
+          config: result.config,
+          versionGuid: result.versionGuid || this.configForm.controls.versionGuid.value,
+        });
         this.message.success('配置已生成');
         this.cdr.markForCheck();
       },
@@ -432,14 +476,21 @@ export class NginxConsoleComponent implements OnInit {
     else this.diffForm.patchValue({ toVersionGuid: String(versionGuid) });
   }
 
-  protected loadVersion(versionGuid: unknown, target: 'preview' | 'publish' | 'diffFrom' | 'diffTo' = 'preview'): void {
+  protected loadVersion(
+    versionGuid: unknown,
+    target: 'preview' | 'publish' | 'diffFrom' | 'diffTo' = 'preview',
+  ): void {
     if (!versionGuid) return;
     this.api.version(String(versionGuid)).subscribe({
       next: (version) => {
         const config = version.config || '';
         this.selectedVersion = version;
         if (target === 'publish') {
-          this.configForm.patchValue({ versionGuid: version.guid || '', siteGuid: version.siteGuid || '', config });
+          this.configForm.patchValue({
+            versionGuid: version.guid || '',
+            siteGuid: version.siteGuid || '',
+            config,
+          });
         }
         if (target === 'diffFrom') {
           this.diffForm.patchValue({ fromVersionGuid: version.guid || '', fromConfig: config });
@@ -467,15 +518,6 @@ export class NginxConsoleComponent implements OnInit {
           this.message.success(result.message || '已发起回滚');
         },
       });
-  }
-
-  protected syncLogs(): void {
-    this.api.syncLogs({ lines: 500 }).subscribe({
-      next: (result) => {
-        this.message.success(`日志同步完成：access ${result['accessInserted'] || 0}，error ${result['errorInserted'] || 0}`);
-        this.loadLogs();
-      },
-    });
   }
 
   protected saveSetting(): void {
@@ -516,29 +558,215 @@ export class NginxConsoleComponent implements OnInit {
     return String(value);
   }
 
-  protected isHttpOk(status: unknown): boolean {
-    const code = Number(status);
-    return Number.isFinite(code) && code < 400;
+  protected dashboardMetrics(): DashboardMetricItem[] {
+    const noNode = !this.selectedNodeGuid;
+    const status = this.summary?.status;
+    const stubStatus = this.summary?.stubStatus;
+    return [
+      {
+        label: '运行状态',
+        value: noNode ? '未选择' : status?.running ? '运行中' : '未运行',
+        hint: noNode ? '请选择在线 Agent 节点' : status?.message || '等待 Agent 响应',
+        icon: !noNode && status?.running ? 'check-circle' : 'warning',
+        tone: !noNode && status?.running ? 'success' : 'warning',
+      },
+      {
+        label: '活跃连接',
+        value: this.countText(stubStatus?.active),
+        hint: `reading ${this.countText(stubStatus?.reading)} / waiting ${this.countText(stubStatus?.waiting)}`,
+        icon: 'api',
+        tone: 'primary',
+      },
+      {
+        label: '累计请求',
+        value: this.countText(stubStatus?.requests),
+        hint: `accepted ${this.countText(stubStatus?.accepts)} / handled ${this.countText(stubStatus?.handled)}`,
+        icon: 'bar-chart',
+        tone: 'plain',
+      },
+      {
+        label: '进程数量',
+        value: this.countText(status?.processes?.length),
+        hint: this.processSummary(),
+        icon: 'cluster',
+        tone: 'plain',
+      },
+    ];
+  }
+
+  protected agentNodes(): NodeRecord[] {
+    return this.nodes.filter((node) => node.accessMode === 'agent' && node.enabled !== false);
+  }
+
+  protected currentNode(): NodeRecord | null {
+    return this.agentNodes().find((node) => node.guid === this.selectedNodeGuid) || null;
+  }
+
+  protected currentNodeTitle(): string {
+    const node = this.currentNode();
+    return node?.name || node?.agentId || node?.guid || '请选择 Agent 节点';
+  }
+
+  protected currentNodeMeta(): string {
+    const node = this.currentNode();
+    if (!node) return '工作台只操作 Agent 接入的 Nginx 节点';
+    return [node.agentId, node.address, node.version ? `Agent ${node.version}` : '']
+      .filter(Boolean)
+      .join(' / ');
+  }
+
+  protected canRunNodeTask(): boolean {
+    const node = this.currentNode();
+    return Boolean(node?.guid && node.enabled !== false && node.status === 'online');
+  }
+
+  protected nodeLabel(node: NodeRecord): string {
+    const name = node.name || node.agentId || node.guid || 'Agent 节点';
+    const status = node.status === 'online' ? '在线' : '离线';
+    return `${name} · ${status}`;
+  }
+
+  protected selectNode(nodeGuid: string): void {
+    this.selectedNodeGuid = nodeGuid;
+    this.summary = null;
+    this.operations = [];
+    if (nodeGuid) {
+      this.loadDashboard();
+    } else {
+      this.cdr.markForCheck();
+    }
+  }
+
+  protected dashboardResources(): DashboardResourceItem[] {
+    return [
+      {
+        label: '站点配置',
+        value: this.countText(this.sites.length),
+        hint: this.enabledSiteText(),
+        icon: 'appstore',
+        link: '/nginx/sites',
+      },
+      {
+        label: '上游服务',
+        value: this.countText(this.upstreams.length),
+        hint: '反向代理目标池',
+        icon: 'deployment-unit',
+        link: '/nginx/upstreams',
+      },
+      {
+        label: '证书管理',
+        value: this.countText(this.certificates.length),
+        hint: this.expiringCertText(),
+        icon: 'safety-certificate',
+        link: '/nginx/certificates',
+      },
+      {
+        label: '版本历史',
+        value: this.countText(this.versions.length),
+        hint: this.latestVersionText(),
+        icon: 'history',
+        link: '/configs/versions',
+      },
+    ];
+  }
+
+  protected operationText(action?: string): string {
+    const map: Record<string, string> = {
+      test: '配置测试',
+      reload: 'Reload',
+      start: '启动',
+      restart: '重启',
+      stop: '停止',
+    };
+    return action ? map[action] || action : '-';
+  }
+
+  protected operationIcon(action?: string): string {
+    const map: Record<string, string> = {
+      test: 'experiment',
+      reload: 'reload',
+      start: 'play-circle',
+      restart: 'sync',
+      stop: 'poweroff',
+    };
+    return action ? map[action] || 'thunderbolt' : 'thunderbolt';
+  }
+
+  protected countText(value?: number | null): string {
+    if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+    return value.toLocaleString('zh-CN');
+  }
+
+  protected processSummary(): string {
+    if (!this.selectedNodeGuid) return '未选择 Agent 节点';
+    const processes = this.summary?.status?.processes || [];
+    if (!processes.length) return this.summary?.status?.mode || '未检测到进程';
+    const memory = processes.reduce((total, item) => total + (item.memoryMb || 0), 0);
+    return `${this.summary?.status?.mode || 'Agent'} / ${memory.toFixed(1)} MB`;
   }
 
   private loadDashboard(): void {
     this.loading = true;
     forkJoin({
-      summary: this.api.summary().pipe(catchError(() => of(null))),
-      operations: this.api.operations({ page: 1, size: 8 }).pipe(catchError(() => of(emptyPage<OperationResult>()))),
+      nodes: this.nodeService
+        .list({ page: 1, size: 100, keyword: '', status: '', enabled: '', desc: 'last_seen_at' })
+        .pipe(catchError(() => of(emptyPage<NodeRecord>()))),
+      sites: this.api.sites({ page: 1, size: 100 }).pipe(catchError(() => of(emptyPage<Site>()))),
+      upstreams: this.api
+        .upstreams({ page: 1, size: 100 })
+        .pipe(catchError(() => of(emptyPage<Upstream>()))),
+      certificates: this.api
+        .certificates({ page: 1, size: 100 })
+        .pipe(catchError(() => of(emptyPage<Certificate>()))),
+      versions: this.api
+        .versions({ page: 1, size: 8, desc: 'create_time' })
+        .pipe(catchError(() => of(emptyPage<PlainRow>()))),
     })
+      .pipe(
+        switchMap((base) => {
+          this.nodes = base.nodes.data || [];
+          this.ensureSelectedNode();
+          const nodeGuid = this.selectedNodeGuid;
+          if (!nodeGuid) {
+            return of({
+              ...base,
+              summary: null,
+              operations: emptyPage<OperationResult>(),
+            });
+          }
+          return forkJoin({
+            summary: this.api.summary({ nodeGuid }).pipe(catchError(() => of(null))),
+            operations: this.api
+              .operations({ page: 1, size: 8, desc: 'create_time', nodeGuid })
+              .pipe(catchError(() => of(emptyPage<OperationResult>()))),
+          }).pipe(map((runtime) => ({ ...base, ...runtime })));
+        }),
+      )
       .pipe(finalize(() => this.finishLoading()))
-      .subscribe(({ summary, operations }) => {
+      .subscribe(({ summary, operations, sites, upstreams, certificates, versions }) => {
         this.summary = summary;
         this.operations = operations.data || [];
+        this.sites = sites.data || [];
+        this.upstreams = upstreams.data || [];
+        this.certificates = certificates.data || [];
+        this.versions = versions.data || [];
       });
+  }
+
+  private ensureSelectedNode(): void {
+    const nodes = this.agentNodes();
+    const selected = nodes.find((node) => node.guid === this.selectedNodeGuid);
+    if (selected?.status === 'online') return;
+    this.selectedNodeGuid = nodes.find((node) => node.status === 'online')?.guid || '';
   }
 
   private loadSites(): void {
     this.loading = true;
     forkJoin({
       sites: this.api.sites({ page: 1, size: 100 }).pipe(catchError(() => of(emptyPage<Site>()))),
-      certificates: this.api.certificates({ page: 1, size: 100 }).pipe(catchError(() => of(emptyPage<Certificate>()))),
+      certificates: this.api
+        .certificates({ page: 1, size: 100 })
+        .pipe(catchError(() => of(emptyPage<Certificate>()))),
     })
       .pipe(finalize(() => this.finishLoading()))
       .subscribe(({ sites, certificates }) => {
@@ -591,33 +819,18 @@ export class NginxConsoleComponent implements OnInit {
     this.loading = true;
     forkJoin({
       sites: this.api.sites({ page: 1, size: 100 }).pipe(catchError(() => of(emptyPage<Site>()))),
-      versions: this.api.versions({ page: 1, size: 10 }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
-      tasks: this.api.tasks({ page: 1, size: 10 }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
+      versions: this.api
+        .versions({ page: 1, size: 10 })
+        .pipe(catchError(() => of(emptyPage<PlainRow>()))),
+      tasks: this.api
+        .tasks({ page: 1, size: 10 })
+        .pipe(catchError(() => of(emptyPage<PlainRow>()))),
     })
       .pipe(finalize(() => this.finishLoading()))
       .subscribe(({ sites, versions, tasks }) => {
         this.sites = sites.data || [];
         this.versions = versions.data || [];
         this.tasks = tasks.data || [];
-      });
-  }
-
-  private loadLogs(): void {
-    this.loading = true;
-    forkJoin({
-      access: this.api.logs('access', { lines: 120 }).pipe(catchError(() => of(null))),
-      error: this.api.logs('error', { lines: 120 }).pipe(catchError(() => of(null))),
-      accessRecords: this.api.accessRecords({ page: 1, size: 20 }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
-      errorRecords: this.api.errorRecords({ page: 1, size: 20 }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
-      audit: this.api.audit({ page: 1, size: 20 }).pipe(catchError(() => of(emptyPage<PlainRow>()))),
-    })
-      .pipe(finalize(() => this.finishLoading()))
-      .subscribe(({ access, error, accessRecords, errorRecords, audit }) => {
-        this.accessLog = access;
-        this.errorLog = error;
-        this.accessRecords = accessRecords.data || [];
-        this.errorRecords = errorRecords.data || [];
-        this.auditRows = audit.data || [];
       });
   }
 
@@ -647,9 +860,36 @@ export class NginxConsoleComponent implements OnInit {
   }
 
   private handleError(err: unknown, fallback: string): void {
-    const error = err as { error?: { msg?: string; message?: string }; msg?: string; message?: string };
-    this.message.error(error?.error?.msg || error?.error?.message || error?.msg || error?.message || fallback);
+    const error = err as {
+      error?: { msg?: string; message?: string };
+      msg?: string;
+      message?: string;
+    };
+    this.message.error(
+      error?.error?.msg || error?.error?.message || error?.msg || error?.message || fallback,
+    );
     this.cdr.markForCheck();
+  }
+
+  private enabledSiteText(): string {
+    const enabled = this.sites.filter((item) => item.enabled !== false).length;
+    return `${this.countText(enabled)} 个启用站点`;
+  }
+
+  private expiringCertText(): string {
+    const now = Date.now();
+    const thirtyDays = now + 30 * 24 * 60 * 60 * 1000;
+    const expiring = this.certificates.filter(
+      (item) => item.notAfter && item.notAfter > now && item.notAfter <= thirtyDays,
+    ).length;
+    if (expiring) return `${expiring} 张 30 天内到期`;
+    return '证书路径与续期';
+  }
+
+  private latestVersionText(): string {
+    const latest = this.versions[0];
+    if (!latest) return '暂无版本记录';
+    return `最新 v${latest['versionNo'] || '-'} / ${latest['status'] || '-'}`;
   }
 }
 

@@ -28,6 +28,11 @@ export const routes: Routes = [
         loadChildren: () => import('./audit/routes').then((m) => m.routes),
         data: { title: '审计记录' },
       },
+      {
+        path: 'system',
+        loadChildren: () => import('./system/routes').then((m) => m.routes),
+        data: { title: '系统' },
+      },
     ],
   },
   { path: '', loadChildren: () => import('./passport/routes').then((m) => m.routes) },

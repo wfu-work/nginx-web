@@ -33,7 +33,7 @@
         <h2>版本记录</h2>
         <p>按状态或原因搜索版本；回滚会把所选版本重新发布到目标节点。</p>
       </div>
-      <span class="page-size-pill">{{ query.size }} 条/页</span>
+      <span class="page-size-pill">共 {{ total() }} 条</span>
     </div>
 
     <form nz-form class="filter-bar" (ngSubmit)="search()">

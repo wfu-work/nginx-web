@@ -32,7 +32,7 @@
         <h2>节点记录</h2>
         <p>筛选在线状态、启用状态或 Agent 标识后查看节点接入情况。</p>
       </div>
-      <span class="page-size-pill">{{ query.size }} 条/页</span>
+      <span class="page-size-pill">共 {{ total() }} 条</span>
     </div>
 
     <form nz-form class="filter-bar" (ngSubmit)="search()">

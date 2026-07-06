@@ -20,6 +20,7 @@
   margin-bottom: 22px;
 }
 
+/* stylelint-disable-next-line selector-type-no-unknown -- title-label is an Angular component selector. */
 .page-head title-label {
   flex: 1 1 auto;
   min-width: 0;
@@ -230,9 +231,7 @@
 }
 
 :host-context(.nm-theme-dark) {
-  background:
-    radial-gradient(circle at 86% 6%, rgb(var(--nm-primary-rgb) / 16%), transparent 28%),
-    linear-gradient(180deg, #101827 0%, #0f172a 100%);
+  background: transparent;
 }
 
 :host-context(.nm-theme-dark) .intro-card strong,

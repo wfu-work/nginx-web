@@ -625,17 +625,13 @@ export class BasicMenusComponent {
       ],
     },
     {
-      title: '观测审计',
-      icon: 'audit',
-      children: [
-        { label: '日志与审计', link: '/nginx/logs', icon: 'audit' },
-        { label: '审计记录', link: '/audit', icon: 'profile' },
-      ],
-    },
-    {
-      title: '系统',
+      title: '系统管理',
       icon: 'setting',
-      children: [{ label: '运行设置', link: '/nginx/settings', icon: 'setting' }],
+      children: [
+        { label: '个人中心', link: '/system/profile', icon: 'user' },
+        { label: '审计记录', link: '/audit', icon: 'audit' },
+        { label: '运行设置', link: '/nginx/settings', icon: 'control' },
+      ],
     },
   ];
 

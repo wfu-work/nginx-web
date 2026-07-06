@@ -146,6 +146,14 @@ export interface HeaderMessageItem {
       font-size: 18px;
     }
 
+    :host-context(.nm-theme-dark) .header-message__trigger {
+      color: rgb(226 232 240 / 82%);
+    }
+
+    :host-context(.nm-theme-dark) .header-message__trigger:hover {
+      color: #fff;
+    }
+
     .header-message-panel {
       width: 360px;
       overflow: hidden;
@@ -280,6 +288,32 @@ export interface HeaderMessageItem {
 
     .header-message-panel__empty {
       padding: 18px 12px 8px;
+    }
+
+    :host-context(.nm-theme-dark) .header-message-panel {
+      border-color: rgb(148 163 184 / 16%);
+      background: rgb(15 23 42 / 96%);
+      box-shadow: 0 22px 52px rgb(0 0 0 / 36%);
+    }
+
+    :host-context(.nm-theme-dark) .header-message-panel__header {
+      border-bottom-color: rgb(148 163 184 / 14%);
+      background: linear-gradient(180deg, rgb(15 23 42 / 98%) 0%, rgb(8 15 29 / 98%) 100%);
+    }
+
+    :host-context(.nm-theme-dark) .header-message-panel__title,
+    :host-context(.nm-theme-dark) .header-message-item__title {
+      color: rgb(248 250 252 / 94%);
+    }
+
+    :host-context(.nm-theme-dark) .header-message-panel__subtitle,
+    :host-context(.nm-theme-dark) .header-message-item__time,
+    :host-context(.nm-theme-dark) .header-message-item__content {
+      color: rgb(203 213 225 / 72%);
+    }
+
+    :host-context(.nm-theme-dark) .header-message-item:hover {
+      background: rgb(var(--nm-primary-rgb) / 12%);
     }
 
     @media (max-width: 767px) {

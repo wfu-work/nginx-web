@@ -1,7 +1,7 @@
 <section class="guide-page">
   <title-label
     title="使用指南"
-    description="按 Agent 节点、站点、上游、配置发布、观测审计的顺序完成 Nginx 管理闭环。"
+    description="按 Agent 节点、站点、上游、配置发布、审计追踪的顺序完成 Nginx 管理闭环。"
   />
 
   <div class="guide-flow">
@@ -28,7 +28,10 @@
     <div class="section-heading">
       <div>
         <h2>Agent 客户端安装</h2>
-        <span>每台 Nginx 服务器运行一个 nginx-agent，Agent 主动注册、上报心跳并轮询配置发布、日志和运行操作任务。</span>
+        <span
+          >每台 Nginx 服务器运行一个 nginx-agent，Agent
+          主动注册、上报心跳并轮询配置发布、日志和运行操作任务。</span
+        >
       </div>
       <a nz-button nzType="primary" routerLink="/nginx/nodes">
         <i nz-icon nzType="cluster"></i>
@@ -40,7 +43,10 @@
       <div class="method-head">
         <div>
           <h3>在线安装</h3>
-          <p>Linux 节点推荐使用中心端下载接口提供的安装脚本。脚本负责下载匹配平台的 Agent、写入 systemd 服务并启动。</p>
+          <p>
+            Linux 节点推荐使用中心端下载接口提供的安装脚本。脚本负责下载匹配平台的 Agent、写入
+            systemd 服务并启动。
+          </p>
         </div>
         <code>nginx-agent.service</code>
       </div>
@@ -48,7 +54,9 @@
       <pre class="command-block"><code>{{ agentOnlineCommand }}</code></pre>
 
       <p class="method-note">
-        安装前先在后端 <code>config.yaml</code> 中配置 <code>agent.shared-token</code>。下载接口会优先使用已构建产物，缺失时在源码运行环境自动构建。
+        安装前先在后端 <code>config.yaml</code> 中配置
+        <code>agent.shared-token</code
+        >。下载接口会优先使用已构建产物，缺失时在源码运行环境自动构建。
       </p>
 
       <div class="file-list">
@@ -63,7 +71,10 @@
         <div class="method-head">
           <div>
             <h3>手动下载</h3>
-            <p>无法在线执行脚本时，下载对应平台的已启用版本，上传到目标服务器后手动启动或写入 systemd。</p>
+            <p>
+              无法在线执行脚本时，下载对应平台的已启用版本，上传到目标服务器后手动启动或写入
+              systemd。
+            </p>
           </div>
           <code>Download</code>
         </div>
@@ -82,7 +93,9 @@
         <div class="method-head">
           <div>
             <h3>手动启动示例</h3>
-            <p>边缘客户端不需要 YAML 配置文件，节点标识、名称、地址和标签都可以通过启动参数传入。</p>
+            <p>
+              边缘客户端不需要 YAML 配置文件，节点标识、名称、地址和标签都可以通过启动参数传入。
+            </p>
           </div>
           <code>CLI</code>
         </div>
@@ -91,7 +104,10 @@
 
         <div class="flag-list">
           @for (item of agentFlags; track item.flag) {
-            <span><code>{{ item.flag }}</code>{{ item.desc }}</span>
+            <span
+              ><code>{{ item.flag }}</code
+              >{{ item.desc }}</span
+            >
           }
         </div>
       </article>

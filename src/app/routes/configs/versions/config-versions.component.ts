@@ -252,7 +252,7 @@ export class ConfigVersionsComponent implements OnInit {
 
   private loadNodes(): void {
     this.nodeService
-      .list({ page: 1, size: 100, keyword: '', status: '', enabled: 'true', desc: 'createTime' })
+      .list({ page: 1, size: 100, keyword: '', status: '', enabled: 'true', desc: 'create_time' })
       .subscribe({
         next: (result) => {
           const nodes = result.data || [];

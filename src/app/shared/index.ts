@@ -1,5 +1,4 @@
 // Components
-export * from './components/cons-logs/cons-logs.component';
 export * from './components/logo/logo.component';
 export * from './components/panel/panel.component';
 export * from './components/password-input/password-input.component';

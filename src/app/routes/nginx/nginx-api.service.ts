@@ -87,6 +87,7 @@ export interface RuntimeSetting {
 }
 
 export interface StatusResult {
+  nodeGuid?: string;
   mode: string;
   running: boolean;
   message: string;
@@ -113,6 +114,7 @@ export interface StubStatusResult {
 }
 
 export interface MetricSummary {
+  nodeGuid?: string;
   status: StatusResult;
   stubStatus?: StubStatusResult;
   checkedAt: number;
@@ -174,21 +176,16 @@ export interface ConfigVersion {
   [key: string]: unknown;
 }
 
-export interface LogResult {
-  path: string;
-  lines: string[];
-}
-
 @Injectable({ providedIn: 'root' })
 export class NginxApiService {
   private readonly http = inject(HttpClient);
 
-  status(): Observable<StatusResult> {
-    return this.http.get<StatusResult>('/nginx/status');
+  status(query: QueryParams = {}): Observable<StatusResult> {
+    return this.http.get<StatusResult>('/nginx/status', { params: this.params(query) });
   }
 
-  summary(): Observable<MetricSummary> {
-    return this.http.get<MetricSummary>('/metrics/summary');
+  summary(query: QueryParams = {}): Observable<MetricSummary> {
+    return this.http.get<MetricSummary>('/metrics/summary', { params: this.params(query) });
   }
 
   operation(action: string, payload: Record<string, unknown> = {}): Observable<OperationResult> {
@@ -268,7 +265,9 @@ export class NginxApiService {
   }
 
   certificates(query: QueryParams = {}): Observable<PageResult<Certificate>> {
-    return this.http.get<PageResult<Certificate>>('/certificates/list', { params: this.params(query) });
+    return this.http.get<PageResult<Certificate>>('/certificates/list', {
+      params: this.params(query),
+    });
   }
 
   saveCertificate(payload: Certificate): Observable<boolean> {
@@ -316,34 +315,10 @@ export class NginxApiService {
     });
   }
 
-  logs(kind: 'access' | 'error', query: QueryParams = {}): Observable<LogResult> {
-    return this.http.get<LogResult>(`/logs/${kind}/list`, { params: this.params(query) });
-  }
-
-  accessRecords(query: QueryParams = {}): Observable<PageResult<Record<string, unknown>>> {
-    return this.http.get<PageResult<Record<string, unknown>>>('/logs/access/records', {
-      params: this.params(query),
-    });
-  }
-
-  errorRecords(query: QueryParams = {}): Observable<PageResult<Record<string, unknown>>> {
-    return this.http.get<PageResult<Record<string, unknown>>>('/logs/error/records', {
-      params: this.params(query),
-    });
-  }
-
-  syncLogs(query: QueryParams = {}): Observable<Record<string, number>> {
-    return this.http.post<Record<string, number>>('/logs/sync', null, { params: this.params(query) });
-  }
-
-  audit(query: QueryParams = {}): Observable<PageResult<Record<string, unknown>>> {
-    return this.http.get<PageResult<Record<string, unknown>>>('/logs/audit/list', {
-      params: this.params(query),
-    });
-  }
-
   settings(query: QueryParams = {}): Observable<PageResult<RuntimeSetting>> {
-    return this.http.get<PageResult<RuntimeSetting>>('/settings/list', { params: this.params(query) });
+    return this.http.get<PageResult<RuntimeSetting>>('/settings/list', {
+      params: this.params(query),
+    });
   }
 
   saveSetting(payload: RuntimeSetting): Observable<boolean> {

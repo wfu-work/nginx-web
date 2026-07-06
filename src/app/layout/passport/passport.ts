@@ -15,7 +15,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
             <logo class="logo" />
             <span class="title">Nginx Control</span>
           </div>
-          <div class="desc">Nginx 配置发布、运行控制与观测审计台</div>
+          <div class="desc">Nginx 配置发布、运行控制与审计追踪台</div>
         </div>
         <router-outlet />
         <global-footer [links]="links">
